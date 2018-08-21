@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package moe.codeest.rxsocketclient.meta
+package gr.osnet.rxsocket.meta
 
 import java.nio.charset.Charset
 
@@ -56,7 +56,7 @@ class SocketConfig(
 
         fun setTimeout(timeout: Int) = apply { this.mTimeout = timeout }
 
-        fun setCharset(charset: Charset) = apply { this.mCharset = charset}
+        fun setCharset(charset: Charset) = apply { this.mCharset = charset }
 
         fun setThreadStrategy(threadStrategy: Int) = apply { this.mThreadStrategy = threadStrategy }
 

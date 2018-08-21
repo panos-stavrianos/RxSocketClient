@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package moe.codeest.rxsocketclient.post
+package gr.osnet.rxsocket.post
 
 /**
  * @author: Est <codeest.dev@gmail.com>
@@ -29,19 +29,22 @@ class PendingPostQueue {
 
 
     fun enqueue(pendingPost: PendingPost) = synchronized(lock) {
-        if (tail != null) {
-            tail!!.next = pendingPost
-            tail = pendingPost
-        } else if (head == null) {
-            tail = pendingPost
-            head = tail
-        } else {
-            throw IllegalStateException("Head present, but no tail")
+        when {
+            tail != null -> {
+                tail!!.next = pendingPost
+                tail = pendingPost
+            }
+            head == null -> {
+                tail = pendingPost
+                head = tail
+            }
+            else -> throw IllegalStateException("Head present, but no tail")
         }
         lock.notifyAll()
     }
 
-    @Synchronized fun poll(): PendingPost? {
+    @Synchronized
+    fun poll(): PendingPost? {
         val pendingPost = head
         head?.let {
             head = head!!.next
@@ -53,7 +56,7 @@ class PendingPostQueue {
     }
 
     @Throws(InterruptedException::class)
-    fun poll(maxMillisToWait: Int): PendingPost? = synchronized(lock){
+    fun poll(maxMillisToWait: Int): PendingPost? = synchronized(lock) {
         if (head == null) {
             lock.wait(maxMillisToWait.toLong())
         }

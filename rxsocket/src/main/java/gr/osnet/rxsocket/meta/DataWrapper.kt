@@ -14,12 +14,15 @@
  * limitations under the License.
  */
 
-package moe.codeest.rxsocketclient.meta
+package gr.osnet.rxsocket.meta
+
+import gr.osnet.rxsocket.SocketClient
 
 /**
  * @author: Est <codeest.dev@gmail.com>
  * @date: 2017/7/8
  * @description:
  */
-
-data class DataWrapper(val state: Int, val data: ByteArray)
+data class DataWrapper(val state: Int, val data: ByteArray, val pre_shared_key: String?, val throwable: Throwable = Throwable("Unknown Error")) {
+    val timePassed: Long = System.currentTimeMillis() - SocketClient.connectedTime
+}

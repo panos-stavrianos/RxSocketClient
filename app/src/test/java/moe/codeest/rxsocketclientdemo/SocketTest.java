@@ -14,10 +14,7 @@ import org.robolectric.annotation.Config;
 import org.robolectric.shadows.ShadowLog;
 import org.robolectric.shadows.ShadowToast;
 
-import java.net.URISyntaxException;
-import java.util.Arrays;
-
-import moe.codeest.rxsocketclient.SocketSubscriber;
+import gr.osnet.rxsocket.SocketSubscriber;
 
 import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertNotNull;
@@ -37,13 +34,13 @@ public class SocketTest {
     private TextView tvReceive;
 
     @Before
-    public void setUp() throws URISyntaxException {
+    public void setUp() {
         ShadowLog.stream = System.out;
         activity = Robolectric.setupActivity(JavaActivity.class);
-        btnConnect = (Button) activity.findViewById(R.id.btn_connect);
-        btnDisConnect = (Button) activity.findViewById(R.id.btn_disconnect);
-        btnSend = (Button) activity.findViewById(R.id.btn_send);
-        tvReceive = (TextView) activity.findViewById(R.id.tv_receive);
+        btnConnect = activity.findViewById(R.id.btn_connect);
+        btnDisConnect = activity.findViewById(R.id.btn_disconnect);
+        btnSend = activity.findViewById(R.id.btn_send);
+        tvReceive = activity.findViewById(R.id.tv_receive);
     }
 
     @Test
@@ -53,20 +50,20 @@ public class SocketTest {
     }
 
     @Test
-    public void testCallback(){
+    public void testCallback() {
         assertNotNull(activity);
         TestSocketSubscriber subscriber = new TestSocketSubscriber();
         activity.connect(subscriber);
         subscriber.onConnected();
         assertEquals("onConnected", ShadowToast.getTextOfLatestToast());
-        subscriber.onResponse(new byte[]{1, 2, 3});
+        subscriber.onResponse("[1, 2, 3]", 0);
         assertEquals("[1, 2, 3]", tvReceive.getText());
-        subscriber.onDisconnected();
+        subscriber.onDisconnected(0);
         assertEquals("onDisConnected", ShadowToast.getTextOfLatestToast());
     }
 
     @Test
-    public void testUI(){
+    public void testUI() {
         assertNotNull(btnConnect);
         assertNotNull(btnDisConnect);
         btnConnect.performClick();
@@ -81,13 +78,18 @@ public class SocketTest {
         }
 
         @Override
-        public void onDisconnected() {
-            Toast.makeText(activity, "onDisConnected", Toast.LENGTH_SHORT).show();
+        public void onDisconnected(long timePassed) {
+            Toast.makeText(activity, "onDisconnected", Toast.LENGTH_SHORT).show();
         }
 
         @Override
-        public void onResponse(@NotNull byte[] data) {
-            tvReceive.setText(Arrays.toString(data));
+        public void onDisconnectedWithError(@NotNull Throwable throwable, long timePassed) {
+            Toast.makeText(activity, "onDisconnectedWithError", Toast.LENGTH_SHORT).show();
+        }
+
+        @Override
+        public void onResponse(@NotNull String data, long timePassed) {
+            tvReceive.setText(data);
         }
     }
 

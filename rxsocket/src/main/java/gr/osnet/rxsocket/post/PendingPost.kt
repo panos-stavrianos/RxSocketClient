@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package moe.codeest.rxsocketclient.post
+package gr.osnet.rxsocket.post
 
 /**
  * @author: Est <codeest.dev@gmail.com>
@@ -24,8 +24,7 @@ package moe.codeest.rxsocketclient.post
 
 class PendingPost private constructor(
         var data: ByteArray?,
-        var next: PendingPost?)
-{
+        var next: PendingPost?) {
     companion object {
         private val pendingPostPool = mutableListOf<PendingPost>()
 

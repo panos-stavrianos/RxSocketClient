@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-package moe.codeest.rxsocketclient.post
+package gr.osnet.rxsocket.post
 
-import moe.codeest.rxsocketclient.SocketClient
+import gr.osnet.rxsocket.SocketClient
 import java.util.concurrent.Executor
 
 /**
@@ -29,7 +29,8 @@ class SyncPoster(private val mSocketClient: SocketClient, private val mExecutor:
 
     private val queue: PendingPostQueue = PendingPostQueue()
 
-    @Volatile private var executorRunning: Boolean = false
+    @Volatile
+    override var executorRunning: Boolean = false
 
     override fun enqueue(data: ByteArray) {
         val pendingPost = PendingPost.obtainPendingPost(data)
@@ -61,15 +62,15 @@ class SyncPoster(private val mSocketClient: SocketClient, private val mExecutor:
                             try {
                                 write(pendingPost!!.data)
                                 flush()
-                            } catch (e: Exception) {
-                                mSocketClient.disconnect()
+                            } catch (throwable: Throwable) {
+                                mSocketClient.disconnectWithError(throwable)
                             }
                             PendingPost.releasePendingPost(pendingPost!!)
                         }
                     }
                 }
-            } catch (e: InterruptedException) {
-                e.toString()
+            } catch (throwable: Throwable) {
+                mSocketClient.disconnectWithError(throwable)
             }
 
         } finally {

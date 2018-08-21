@@ -14,9 +14,10 @@
  * limitations under the License.
  */
 
-package moe.codeest.rxsocketclient.post
+package gr.osnet.rxsocket.post
 
-import moe.codeest.rxsocketclient.SocketClient
+import gr.osnet.rxsocket.SocketClient
+import mu.KotlinLogging
 import java.util.concurrent.Executor
 
 
@@ -26,9 +27,13 @@ import java.util.concurrent.Executor
  * @description:
  */
 
+private val logger = KotlinLogging.logger {}
+
 class AsyncPoster(private val mSocketClient: SocketClient, private val mExecutor: Executor) : Runnable, IPoster {
 
     private val queue: PendingPostQueue = PendingPostQueue()
+    @Volatile
+    override var executorRunning: Boolean = false
 
     override fun enqueue(data: ByteArray) {
         val pendingPost = PendingPost.obtainPendingPost(data)
@@ -37,15 +42,16 @@ class AsyncPoster(private val mSocketClient: SocketClient, private val mExecutor
     }
 
     override fun run() {
-        val pendingPost = queue.poll() ?: throw IllegalStateException("No pending post available")
-        mSocketClient.mSocket.takeIf { it.isConnected }?.getOutputStream()?.apply {
-            try {
+        try {
+            val pendingPost = queue.poll()
+                    ?: throw IllegalStateException("No pending post available")
+            mSocketClient.mSocket.getOutputStream()?.apply {
                 write(pendingPost.data)
                 flush()
-            } catch (e: Exception) {
-                mSocketClient.disconnect()
+                PendingPost.releasePendingPost(pendingPost)
             }
-            PendingPost.releasePendingPost(pendingPost)
+        } catch (throwable: Throwable) {
+            mSocketClient.disconnectWithError(throwable)
         }
     }
 

@@ -14,14 +14,20 @@
  * limitations under the License.
  */
 
-package moe.codeest.rxsocketclient.post
+package gr.osnet.rxsocket
+
+import gr.osnet.rxsocket.meta.SocketConfig
 
 /**
  * @author: Est <codeest.dev@gmail.com>
- * @date: 2017/7/9
+ * @date: 2017/7/8
  * @description:
  */
 
-interface IPoster {
-    fun enqueue(data: ByteArray)
+class RxSocketClient {
+
+    companion object {
+        @JvmStatic
+        fun create(config: SocketConfig): SocketClient = SocketClient(config)
+    }
 }

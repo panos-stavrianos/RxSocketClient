@@ -9,18 +9,16 @@ import android.widget.TextView;
 
 import org.jetbrains.annotations.NotNull;
 
-import java.util.Arrays;
-
+import gr.osnet.rxsocket.RxSocketClient;
+import gr.osnet.rxsocket.SocketClient;
+import gr.osnet.rxsocket.SocketSubscriber;
+import gr.osnet.rxsocket.meta.SocketConfig;
+import gr.osnet.rxsocket.meta.SocketOption;
+import gr.osnet.rxsocket.meta.ThreadStrategy;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.Disposable;
-import io.reactivex.functions.Consumer;
 import kotlin.text.Charsets;
-import moe.codeest.rxsocketclient.RxSocketClient;
-import moe.codeest.rxsocketclient.SocketClient;
-import moe.codeest.rxsocketclient.SocketSubscriber;
-import moe.codeest.rxsocketclient.meta.SocketConfig;
-import moe.codeest.rxsocketclient.meta.SocketOption;
-import moe.codeest.rxsocketclient.meta.ThreadStrategy;
+
 
 /**
  * @author: Est <codeest.dev@gmail.com>
@@ -34,8 +32,8 @@ public class JavaActivity extends AppCompatActivity implements View.OnClickListe
     private static final String IP = "192.168.1.101";
     private static final int PORT = 55731;
     private static final byte[] HEART_BEAT = {1, 3, 4};
-    private static final byte[] HEAD = {1, 2};
-    private static final byte[] TAIL = {5, 7};
+    private static final byte HEAD = 2;
+    private static final byte TAIL = 3;
 
     private static final byte[] MESSAGE = {0, 1, 3};
     private static final String MESSAGE_STR = "TEST";
@@ -51,10 +49,10 @@ public class JavaActivity extends AppCompatActivity implements View.OnClickListe
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        btnSend = (Button) findViewById(R.id.btn_send);
-        btnConnect = (Button) findViewById(R.id.btn_connect);
-        btnDisConnect = (Button) findViewById(R.id.btn_disconnect);
-        tvReceive = (TextView) findViewById(R.id.tv_receive);
+        btnSend = findViewById(R.id.btn_send);
+        btnConnect = findViewById(R.id.btn_connect);
+        btnDisConnect = findViewById(R.id.btn_disconnect);
+        tvReceive = findViewById(R.id.tv_receive);
         btnSend.setOnClickListener(this);
         btnConnect.setOnClickListener(this);
         btnDisConnect.setOnClickListener(this);
@@ -87,25 +85,22 @@ public class JavaActivity extends AppCompatActivity implements View.OnClickListe
                     }
 
                     @Override
-                    public void onDisconnected() {
-                        //onDisconnected
-                        Log.e(TAG, "onDisconnected");
-                        //re-connect
-//                        connect();
+                    public void onResponse(@NotNull String data, long timePassed) {
+
                     }
 
                     @Override
-                    public void onResponse(@NotNull byte[] data) {
-                        //receive data
-                        Log.e(TAG, Arrays.toString(data));
-                        tvReceive.setText(Arrays.toString(data));
+                    public void onDisconnectedWithError(@NotNull Throwable throwable, long timePassed) {
+
                     }
-                }, new Consumer<Throwable>() {
+
                     @Override
-                    public void accept(Throwable throwable) throws Exception {
-                        //onError
-                        Log.e(TAG, throwable.toString());
+                    public void onDisconnected(long timePassed) {
+
                     }
+                }, throwable -> {
+                    //onError
+                    Log.e(TAG, throwable.toString());
                 });
     }
 
@@ -120,7 +115,7 @@ public class JavaActivity extends AppCompatActivity implements View.OnClickListe
         switch (v.getId()) {
             case R.id.btn_send:
                 //send bytes
-                mClient.sendData(MESSAGE);
+                mClient.sendBytes(MESSAGE, false);
 
                 //or send string
 //                mClient.sendData(MESSAGE_STR);
@@ -133,12 +128,10 @@ public class JavaActivity extends AppCompatActivity implements View.OnClickListe
 
             case R.id.btn_disconnect:
                 //disconnect
-                if (mClient.isConnecting()) {
-                    mClient.disconnect();
-                }
-
+                //mClient.disconnect();
                 //or disconnect
-//                ref.dispose();
+                if (ref != null && !ref.isDisposed())
+                    ref.dispose();
                 break;
         }
     }
