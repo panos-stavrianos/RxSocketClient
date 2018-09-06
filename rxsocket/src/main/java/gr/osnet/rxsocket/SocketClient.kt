@@ -164,6 +164,8 @@ class SocketClient(private val mConfig: SocketConfig) {
         }
     }
 
+    fun encryptFile(path: String): String =
+            mOption?.encryptFile(path) ?: path
 
     companion object {
         var connectedTime: Long = System.currentTimeMillis()
