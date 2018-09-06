@@ -1,4 +1,4 @@
-# RxSocket
+# RxSocket (Under Development)
 This project is a fork from [codeestX](https://github.com/codeestX/RxSocketClient/)
 
 # Added
