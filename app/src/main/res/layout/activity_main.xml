@@ -3,16 +3,16 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
     android:gravity="center_horizontal"
+    android:orientation="vertical"
     tools:context="moe.codeest.rxsocketclientdemo.MainActivity">
 
     <Button
         android:id="@+id/btn_connect"
         android:layout_width="wrap_content"
         android:layout_height="40dp"
-        android:text="Connect"
-        android:layout_margin="20dp"/>
+        android:layout_margin="20dp"
+        android:text="Connect" />
 
     <Button
         android:id="@+id/btn_disconnect"
@@ -24,15 +24,20 @@
         android:id="@+id/btn_send"
         android:layout_width="wrap_content"
         android:layout_height="40dp"
-        android:text="Send"
-        android:layout_marginTop="20dp"/>
+        android:layout_marginTop="20dp"
+        android:text="Send" />
 
     <TextView
         android:id="@+id/tv_receive"
         android:layout_width="wrap_content"
         android:layout_height="40dp"
-        android:text="receive"
-        android:layout_marginTop="20dp"/>
+        android:layout_marginTop="20dp"
+        android:text="receive" />
 
-
+    <TextView
+        android:id="@+id/hello"
+        android:layout_width="wrap_content"
+        android:layout_height="40dp"
+        android:layout_marginTop="20dp"
+        android:text="Hello World!" />
 </LinearLayout>

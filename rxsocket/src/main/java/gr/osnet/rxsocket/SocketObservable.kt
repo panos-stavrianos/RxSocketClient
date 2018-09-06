@@ -21,10 +21,8 @@ import io.reactivex.Observable
 import io.reactivex.Observer
 import io.reactivex.disposables.Disposable
 import mu.KotlinLogging
-import java.io.BufferedReader
 import java.net.InetSocketAddress
 import java.net.Socket
-import java.util.*
 import kotlin.math.max
 
 /**
@@ -52,9 +50,9 @@ class SocketObservable(private val mConfig: SocketConfig, val mSocket: Socket, v
                 try {
                     mSocket.connect(InetSocketAddress(mConfig.mIp, mConfig.mPort
                             ?: 1080), mConfig.mTimeout ?: 0)
-                    mClient.sendData(mOption?.mFirstContact, false)
+                    mClient.send(mOption?.mFirstContact, false)
 
-                    observer?.onNext(DataWrapper(SocketState.OPEN, ByteArray(0), mOption?.mPreSharedKey))
+                    observer?.onNext(DataWrapper(SocketState.OPEN, ByteArray(0)))
                     mReadThread.start()
                 } catch (throwable: Throwable) {
                     state = SocketState.CLOSE_WITH_ERROR
@@ -74,7 +72,7 @@ class SocketObservable(private val mConfig: SocketConfig, val mSocket: Socket, v
 
     fun close(throwable: Throwable) {
         if (!isClosed) {
-            observerWrapper?.onNext(DataWrapper(state, ByteArray(0), mOption?.mPreSharedKey, throwable))
+            observerWrapper?.onNext(DataWrapper(state, ByteArray(0), throwable))
             observerWrapper?.dispose()
             isClosed = true
         }
@@ -84,26 +82,23 @@ class SocketObservable(private val mConfig: SocketConfig, val mSocket: Socket, v
         fun onNext(data: ByteArray) {
             if (mSocket.isConnected) {
                 mClient.lastExchange = System.currentTimeMillis()
-                val message = checkCRC(data)
+                val message = mOption?.checkCheckSum(data) ?: data
+
                 mOption?.apply {
-                    if (mOption.mOk != null && mOption.mWrong != null) {
-                        if (Arrays.equals(message, mOption.mOk)) {
-                            return@onNext
-                        }
-                        if (Arrays.equals(message, mOption.mWrong)) {
-                            logger.info { "Server send NAK" }
-                            state = SocketState.CLOSE_WITH_ERROR
-                            dispose()
-                            return@onNext
-                        }
+                    if (isOk(message)) return@onNext
+                    if (isWrong(message)) {
+                        logger.info { "Server send NAK" }
+                        state = SocketState.CLOSE_WITH_ERROR
+                        dispose()
+                        return@onNext
                     }
                 }
                 if (message.isEmpty()) {
                     mOption?.apply {
                         if (mOption.mOk != null && mOption.mWrong != null) {
-                            logger.info { "Server send wrong CRC: " + String(data) }
-                            mClient.sendData(mOption.mWrong, false)
-                            mClient.sendEnd()
+                            logger.info { "Server send wrong CheckSum: " + data.toString }
+                            mClient.send(mOption.mWrong, false)
+                            mClient.send("END", false)
                             state = SocketState.CLOSE_WITH_ERROR
                             dispose()
                         }
@@ -111,9 +106,9 @@ class SocketObservable(private val mConfig: SocketConfig, val mSocket: Socket, v
                 } else {
                     mOption?.apply {
                         if (mOption.mOk != null && mOption.mWrong != null)
-                            mClient.sendData(mOption.mOk, false)
+                            mClient.send(mOption.mOk, false)
                     }
-                    observer?.onNext(DataWrapper(SocketState.CONNECTED, message, mOption?.mPreSharedKey))
+                    observer?.onNext(DataWrapper(SocketState.CONNECTED, message))
                 }
             }
         }
@@ -133,51 +128,6 @@ class SocketObservable(private val mConfig: SocketConfig, val mSocket: Socket, v
         }
     }
 
-    private fun checkCRC(data: ByteArray): ByteArray {
-
-        mOption?.apply {
-            if (mOption.mHasCRC) {
-                val resultString = String(data, Charsets.UTF_8)
-                val message = CRC16Hex.getClearData(resultString)
-
-                val messageCRC = CRC16Hex.getCheck(message)
-                return if (resultString.endsWith(messageCRC))
-                    message.toByteArray()
-                else {
-                    ByteArray(0)
-                }
-            }
-        }
-        return data
-    }
-
-
-    private fun read(input: BufferedReader): ByteArray {
-        if (!input.ready()) return ByteArray(0)
-        mOption?.apply {
-            when (hasHeadTail()) {
-                HeadTail.BOTH -> {
-                    var next: Int
-                    val message = StringBuilder()
-                    message.append("")
-                    if (input.read() == mHead!!.toInt()) {
-                        return input.let {
-                            while (true) {
-                                next = it.read()
-                                if (next == -1) return ByteArray(0)
-                                if (next == mTail!!.toInt())
-                                    break
-                                message.append(next.toChar())
-                            }
-                            String(message).toByteArray(Charsets.UTF_8)
-                        }
-                    }
-                }
-            }
-        }
-        return input.readText().toByteArray()
-    }
-
 
     inner class ReadThread : Thread() {
 
@@ -191,7 +141,7 @@ class SocketObservable(private val mConfig: SocketConfig, val mSocket: Socket, v
 
                 val input = mSocket.getInputStream().bufferedReader()
                 while (!mReadThread.isInterrupted && mSocket.isConnected) {
-                    val data = read(input)
+                    val data = mOption?.read(input) ?: input.readText().toByteArray()
 
                     if (data.isNotEmpty()) {
                         val deltaTime = System.currentTimeMillis() - time
@@ -205,10 +155,11 @@ class SocketObservable(private val mConfig: SocketConfig, val mSocket: Socket, v
                         observerWrapper?.onNext(data)
                     }
                     averageTime = max(averageTime, 1000)
-                    Thread.sleep(averageTime / 2)
+                    Thread.sleep(averageTime / 4)
                 }
             } catch (throwable: Throwable) {
-                close(throwable)
+                throwable.printStackTrace()
+                mClient.disconnectWithError(throwable)
             }
         }
     }

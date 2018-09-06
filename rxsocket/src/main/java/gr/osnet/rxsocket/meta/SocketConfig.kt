@@ -17,6 +17,7 @@
 package gr.osnet.rxsocket.meta
 
 import java.nio.charset.Charset
+import java.util.concurrent.TimeUnit
 
 /**
  * @author: Est <codeest.dev@gmail.com>
@@ -54,7 +55,7 @@ class SocketConfig(
 
         fun setPort(port: Int) = apply { this.mPort = port }
 
-        fun setTimeout(timeout: Int) = apply { this.mTimeout = timeout }
+        fun setTimeout(timeout: Long, units: TimeUnit = TimeUnit.MILLISECONDS) = apply { this.mTimeout = units.toMillis(timeout).toInt() }
 
         fun setCharset(charset: Charset) = apply { this.mCharset = charset }
 

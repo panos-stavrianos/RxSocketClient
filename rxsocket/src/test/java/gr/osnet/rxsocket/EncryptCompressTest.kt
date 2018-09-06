@@ -1,0 +1,61 @@
+package gr.osnet.rxsocket
+
+import gr.osnet.rxsocket.meta.toString
+import org.junit.jupiter.api.Assertions
+import org.junit.jupiter.api.Test
+
+
+class EncryptCompressTest {
+
+    @Test
+    fun encryptDecryptString() {
+        val password = "1234"
+        val original = "Hello"
+        val enc = CompressEncrypt.encrypt(original, password, false)//for some reason PKCS7 breaks in unit test
+        val dec = CompressEncrypt.decrypt(enc, password, false)
+        Assertions.assertEquals(original, dec.toString)
+    }
+
+    @Test
+    fun encryptDecryptBytes() {
+        val password = "1234"
+        val original = "Hello".toByteArray()
+        val enc = CompressEncrypt.encrypt(original, password, false)//for some reason PKCS7 breaks in unit test
+        val dec = CompressEncrypt.decrypt(enc, password, false)
+        Assertions.assertArrayEquals(original, dec)
+    }
+
+    @Test
+    fun encryptDecryptFile() {
+        val password = "1234"
+        val original = "src/test/resources/1.jpg"
+        val enc = CompressEncrypt.encryptFile(original, password, false)//for some reason PKCS7 breaks in unit test
+        val dec = CompressEncrypt.decryptFile(enc, password, false)
+
+    }
+
+    @Test
+    fun compressDecompressString() {
+        val original = "Hello".toByteArray()
+        val compressed = CompressEncrypt.compress(original)
+        val decompressed = CompressEncrypt.decompress(compressed)
+        Assertions.assertArrayEquals(original, decompressed)
+    }
+
+    @Test
+    fun compressDecompressBytes() {
+        val original = "Hello".toByteArray()
+        val compressed = CompressEncrypt.compress(original)
+        val decompressed = CompressEncrypt.decompress(compressed)
+        Assertions.assertArrayEquals(original, decompressed)
+    }
+
+    @Test
+    fun compressDecompressFile() {
+        val original = "src/test/resources/1.txt"
+        val compressed = CompressEncrypt.compressFile(original)
+        val decompressed = CompressEncrypt.decompressFile(compressed)
+    }
+
+
+}

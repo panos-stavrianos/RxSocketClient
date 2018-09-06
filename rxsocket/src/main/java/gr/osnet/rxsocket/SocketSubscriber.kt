@@ -18,6 +18,7 @@ package gr.osnet.rxsocket
 
 import gr.osnet.rxsocket.meta.DataWrapper
 import gr.osnet.rxsocket.meta.SocketState
+import gr.osnet.rxsocket.meta.toString
 import io.reactivex.functions.Consumer
 
 
@@ -36,10 +37,7 @@ abstract class SocketSubscriber : Consumer<DataWrapper> {
     override fun accept(t: DataWrapper) {
         when (t.state) {
             SocketState.CONNECTED -> {
-                val data = if (t.pre_shared_key != null)
-                    CompressEncrypt.unpack(String(t.data).substring(4), t.pre_shared_key)
-                else
-                    String(t.data, Charsets.UTF_8)
+                val data = t.data.toString
                 logger.info { "From server: $data" }
                 onResponse(data, t.timePassed)
             }

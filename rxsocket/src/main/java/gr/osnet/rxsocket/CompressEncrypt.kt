@@ -1,8 +1,11 @@
+@file:Suppress("MemberVisibilityCanBePrivate", "unused")
+
 package gr.osnet.rxsocket
 
-import android.util.Base64
 import com.google.common.io.ByteStreams
+import gr.osnet.rxsocket.meta.toString
 import mu.KotlinLogging
+import org.apache.commons.codec.binary.Base64
 import java.io.*
 import java.security.InvalidAlgorithmParameterException
 import java.security.InvalidKeyException
@@ -23,10 +26,17 @@ import kotlin.text.Charsets.UTF_8
  */
 private val logger = KotlinLogging.logger {}
 
+val ByteArray.toBase64: ByteArray get() = Base64.encodeBase64(this)
+
+val ByteArray.fromBase64: ByteArray get() = Base64.decodeBase64(this)
+
 object CompressEncrypt {
 
-    fun encrypt(path: String, password: String): String? {
-        if (password.isEmpty()) return null
+
+    fun encrypt(plaintext: String, password: String, usePKCS7: Boolean = true): ByteArray = encrypt(plaintext.toByteArray(), password, usePKCS7)
+
+    fun encrypt(plaintext: ByteArray, password: String, usePKCS7: Boolean = true): ByteArray {
+        if (password.isEmpty()) return ByteArray(0)
         val random = SecureRandom()
         val salt = ByteArray(16)
         random.nextBytes(salt)
@@ -41,7 +51,41 @@ object CompressEncrypt {
 
         val iv = IvParameterSpec(ivBytes)
 
-        val c = Cipher.getInstance("AES/CBC/PKCS7Padding")
+        val c = if (usePKCS7)
+            Cipher.getInstance("AES/CBC/PKCS7Padding")
+        else
+            Cipher.getInstance("AES/CBC/PKCS5Padding")
+
+        c.init(Cipher.ENCRYPT_MODE, key, iv)
+        val encValue = c.doFinal(plaintext)
+
+        val finalCipherText = ByteArray(encValue.size + 2 * 16)
+        System.arraycopy(ivBytes, 0, finalCipherText, 0, 16)
+        System.arraycopy(salt, 0, finalCipherText, 16, 16)
+        System.arraycopy(encValue, 0, finalCipherText, 32, encValue.size)
+        return finalCipherText
+    }
+
+    fun encryptFile(path: String, password: String, usePKCS7: Boolean = true): String {
+        if (password.isEmpty()) return path
+        val random = SecureRandom()
+        val salt = ByteArray(16)
+        random.nextBytes(salt)
+        val spec = PBEKeySpec(password.toCharArray(), salt, 100, 128) // AES-256
+        val f = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA1")
+
+        val keyBytes = f.generateSecret(spec).encoded
+        val key = SecretKeySpec(keyBytes, "AES")
+
+        val ivBytes = ByteArray(16)
+        random.nextBytes(ivBytes)
+
+        val iv = IvParameterSpec(ivBytes)
+
+        val c = if (usePKCS7)
+            Cipher.getInstance("AES/CBC/PKCS7Padding")
+        else
+            Cipher.getInstance("AES/CBC/PKCS5Padding")
         c.init(Cipher.ENCRYPT_MODE, key, iv)
 
         val fileOutputStream = FileOutputStream("$path.enc")
@@ -58,55 +102,79 @@ object CompressEncrypt {
         return "$path.enc"
     }
 
-    fun encrypt(plaintext: ByteArray, password: String): ByteArray {
+
+    fun decrypt(data: ByteArray, password: String, usePKCS7: Boolean = true): ByteArray {
         if (password.isEmpty()) return ByteArray(0)
-        val random = SecureRandom()
-        val salt = ByteArray(16)
-        random.nextBytes(salt)
-        val spec = PBEKeySpec(password.toCharArray(), salt, 100, 128) // AES-256
-        val f = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA1")
 
-        val keyBytes = f.generateSecret(spec).encoded
-        val key = SecretKeySpec(keyBytes, "AES")
+        try {
+            val ivBytes = ByteArray(16)
+            val salt = ByteArray(16)
+            val cipherBytes = ByteArray(data.size - 2 * 16)
 
-        val ivBytes = ByteArray(16)
-        random.nextBytes(ivBytes)
+            System.arraycopy(data, 0, ivBytes, 0, 16)
+            System.arraycopy(data, 16, salt, 0, 16)
+            System.arraycopy(data, 32, cipherBytes, 0, data.size - 2 * 16)
 
-        val iv = IvParameterSpec(ivBytes)
+            val spec = PBEKeySpec(password.toCharArray(), salt, 100, 128) // AES-256
+            val f = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA1")
 
-        val c = Cipher.getInstance("AES/CBC/PKCS7Padding")
-        c.init(Cipher.ENCRYPT_MODE, key, iv)
-        val encValue = c.doFinal(plaintext)
+            val keyBytes = f.generateSecret(spec).encoded
+            val key = SecretKeySpec(keyBytes, "AES")
 
-        val finalCipherText = ByteArray(encValue.size + 2 * 16)
-        System.arraycopy(ivBytes, 0, finalCipherText, 0, 16)
-        System.arraycopy(salt, 0, finalCipherText, 16, 16)
-        System.arraycopy(encValue, 0, finalCipherText, 32, encValue.size)
-        return finalCipherText
+            val c = if (usePKCS7)
+                Cipher.getInstance("AES/CBC/PKCS7Padding")
+            else
+                Cipher.getInstance("AES/CBC/PKCS5Padding")
+            val ivParams = IvParameterSpec(ivBytes)
+            c.init(Cipher.DECRYPT_MODE, key, ivParams)
+            return c.doFinal(cipherBytes)
+
+        } catch (e: NoSuchPaddingException) {
+            e.printStackTrace()
+        } catch (e: InvalidAlgorithmParameterException) {
+            e.printStackTrace()
+        } catch (e: InvalidKeyException) {
+            e.printStackTrace()
+        } catch (e: NoSuchAlgorithmException) {
+            e.printStackTrace()
+        } catch (e: BadPaddingException) {
+            e.printStackTrace()
+        } catch (e: IllegalBlockSizeException) {
+            e.printStackTrace()
+        } catch (e: InvalidKeySpecException) {
+            e.printStackTrace()
+        } catch (e: UnsupportedEncodingException) {
+            e.printStackTrace()
+        }
+
+        return ByteArray(0)
     }
 
-
-    fun decrypt(path: String, pre_shared_key: String): String {
-        if (pre_shared_key.isEmpty()) return ""
+    fun decryptFile(path: String, password: String, usePKCS7: Boolean = true): String {
+        if (password.isEmpty()) return ""
         try {
             val fis = FileInputStream(path)
-            val fos = FileOutputStream("$path.mp4")
+            val newName = path.replace(".enc", ".dec")
+            val fos = FileOutputStream(newName)
 
             val ivBytes = ByteArray(16)
             fis.read(ivBytes)
             val salt = ByteArray(16)
             fis.read(salt)
 
-            val spec = PBEKeySpec(pre_shared_key.toCharArray(), salt, 100, 128) // AES-256
+            val spec = PBEKeySpec(password.toCharArray(), salt, 100, 128) // AES-256
             val f = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA1")
 
             val keyBytes = f.generateSecret(spec).encoded
             val key = SecretKeySpec(keyBytes, "AES")
 
-            val cipher = Cipher.getInstance("AES/CBC/PKCS7Padding")
+            val c = if (usePKCS7)
+                Cipher.getInstance("AES/CBC/PKCS7Padding")
+            else
+                Cipher.getInstance("AES/CBC/PKCS5Padding")
             val ivParams = IvParameterSpec(ivBytes)
-            cipher.init(Cipher.DECRYPT_MODE, key, ivParams)
-            val cis = CipherInputStream(fis, cipher)
+            c.init(Cipher.DECRYPT_MODE, key, ivParams)
+            val cis = CipherInputStream(fis, c)
 
             checkNotNull(cis)
             checkNotNull(fos)
@@ -128,7 +196,7 @@ object CompressEncrypt {
             fos.flush()
             fos.close()
             cis.close()
-            return "$path.mp4"
+            return newName
         } catch (e: NoSuchPaddingException) {
             e.printStackTrace()
         } catch (e: InvalidAlgorithmParameterException) {
@@ -149,109 +217,102 @@ object CompressEncrypt {
         return ""
     }
 
-    fun decrypt(data: ByteArray, pre_shared_key: String): ByteArray {
-        if (pre_shared_key.isEmpty()) return ByteArray(0)
-
-        try {
-            val ivBytes = ByteArray(16)
-            val salt = ByteArray(16)
-            val cipherBytes = ByteArray(data.size - 2 * 16)
-
-            System.arraycopy(data, 0, ivBytes, 0, 16)
-            System.arraycopy(data, 16, salt, 0, 16)
-            System.arraycopy(data, 32, cipherBytes, 0, data.size - 2 * 16)
-
-            val spec = PBEKeySpec(pre_shared_key.toCharArray(), salt, 100, 128) // AES-256
-            val f = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA1")
-
-            val keyBytes = f.generateSecret(spec).encoded
-            val key = SecretKeySpec(keyBytes, "AES")
-
-            val cipher = Cipher.getInstance("AES/CBC/PKCS7Padding")
-            val ivParams = IvParameterSpec(ivBytes)
-            cipher.init(Cipher.DECRYPT_MODE, key, ivParams)
-            return cipher.doFinal(cipherBytes)
-
-        } catch (e: NoSuchPaddingException) {
-            e.printStackTrace()
-        } catch (e: InvalidAlgorithmParameterException) {
-            e.printStackTrace()
-        } catch (e: InvalidKeyException) {
-            e.printStackTrace()
-        } catch (e: NoSuchAlgorithmException) {
-            e.printStackTrace()
-        } catch (e: BadPaddingException) {
-            e.printStackTrace()
-        } catch (e: IllegalBlockSizeException) {
-            e.printStackTrace()
-        } catch (e: InvalidKeySpecException) {
-            e.printStackTrace()
-        } catch (e: UnsupportedEncodingException) {
-            e.printStackTrace()
-        }
-
-        return ByteArray(0)
+    fun compress(data: ByteArray): ByteArray {
+        val bos = ByteArrayOutputStream()
+        GZIPOutputStream(bos).bufferedWriter(UTF_8).use { it.write(data.toString) }
+        return bos.toByteArray()
     }
 
-    fun compress(string: String): ByteArray {
+    fun compressFile(path: String): String {
         try {
-            val os = ByteArrayOutputStream(string.length)
-            val gos: GZIPOutputStream?
-            gos = GZIPOutputStream(os)
-            gos.write(string.toByteArray())
-            gos.close()
-            val compressed = os.toByteArray()
-            os.close()
-            return compressed
+            val fis = FileInputStream(path)
+            val fos = FileOutputStream("$path.gzip")
+            val gzipOS = GZIPOutputStream(fos)
+            val buffer = ByteArray(1024)
+
+            var len = fis.read(buffer)
+            while (len != -1) {
+                gzipOS.write(buffer, 0, len)
+                len = fis.read(buffer)
+            }
+
+            //close resources
+            gzipOS.close()
+            fos.close()
+            fis.close()
+            return "$path.gzip"
+
         } catch (e: IOException) {
             e.printStackTrace()
         }
 
-        return ByteArray(0)
+        return path
     }
 
-    fun compress(content: ByteArray): ByteArray {
-        val bos = ByteArrayOutputStream()
-        GZIPOutputStream(bos).bufferedWriter(UTF_8).use { it.write(String(content)) }
-        return bos.toByteArray()
+    fun decompress(data: ByteArray): ByteArray = GZIPInputStream(data.inputStream()).bufferedReader(UTF_8).use { it.readText() }.toByteArray()
+
+    fun decompressFile(path: String): String {
+        try {
+            val fis = FileInputStream(path)
+            val gis = GZIPInputStream(fis)
+            val fos = FileOutputStream(path.replace(".gzip", ".deco"))
+            val buffer = ByteArray(1024)
+            var len = gis.read(buffer)
+            while (len != -1) {
+                fos.write(buffer, 0, len)
+                len = gis.read(buffer)
+            }
+            //close resources
+            fos.close()
+            gis.close()
+            return path.replace(".gzip", ".deco")
+        } catch (e: IOException) {
+            e.printStackTrace()
+        }
+        return path
     }
 
-    fun decompress(content: ByteArray): String =
-            GZIPInputStream(content.inputStream()).bufferedReader(UTF_8).use { it.readText() }
+    private fun decompressGzipFile(gzipFile: String, newFile: String) {
+        try {
+            val fis = FileInputStream(gzipFile)
+            val gis = GZIPInputStream(fis)
+            val fos = FileOutputStream(newFile)
+            val buffer = ByteArray(1024)
+            var len = gis.read(buffer)
+            while (len != -1) {
+                fos.write(buffer, 0, len)
+                len = gis.read(buffer)
+            }
+            //close resources
+            fos.close()
+            gis.close()
+        } catch (e: IOException) {
+            e.printStackTrace()
+        }
 
-    fun pack(data: String, pre_shared_key: String?): String {
-        if (pre_shared_key.isNullOrEmpty()) return ""
-
-        val compressed = compress(data)
-        val encrypted = if (pre_shared_key != null)
-            encrypt(compressed, pre_shared_key)
-        else
-            compressed
-        return toBase64(encrypted)
     }
 
-    fun pack(data: ByteArray, pre_shared_key: String?): ByteArray {
-        if (pre_shared_key.isNullOrEmpty()) return ByteArray(0)
+    private fun compressGzipFile(file: String, gzipFile: String) {
+        try {
+            val fis = FileInputStream(file)
+            val fos = FileOutputStream(gzipFile)
+            val gzipOS = GZIPOutputStream(fos)
+            val buffer = ByteArray(1024)
 
-        val compressed = compress(data)
-        return if (pre_shared_key != null)
-            encrypt(compressed, pre_shared_key)
-        else
-            compressed
+
+            var len = fis.read(buffer)
+            while (len != -1) {
+                gzipOS.write(buffer, 0, len)
+                len = fis.read(buffer)
+            }
+
+            //close resources
+            gzipOS.close()
+            fos.close()
+            fis.close()
+        } catch (e: IOException) {
+            e.printStackTrace()
+        }
+
     }
-
-    fun unpack(data: String, pre_shared_key: String?): String {
-        if (pre_shared_key.isNullOrEmpty()) return ""
-        val enc = fromBase64(data)
-        val compressed = if (pre_shared_key != null)
-            decrypt(enc, pre_shared_key)
-        else
-            enc
-        return decompress(compressed)
-    }
-
-    fun toBase64(data: ByteArray): String = Base64.encodeToString(data, Base64.DEFAULT)
-
-    fun fromBase64(data: String): ByteArray = Base64.decode(data, Base64.DEFAULT)
-
 }
