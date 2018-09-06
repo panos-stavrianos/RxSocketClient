@@ -143,7 +143,7 @@ class SocketOption(
 
     fun addCheckSum(data: ByteArray): ByteArray =
             if (mUseCheckSum)
-                data.toString.addCheckSum.toByteArray()
+                data.toString.addCheckSum.toByteArray(Charsets.UTF_8)
             else
                 data
 
@@ -151,7 +151,7 @@ class SocketOption(
         if (mUseCheckSum) {
             val message = data.toString
             return if (message.validateCheckSum)
-                message.removeCheckSum.toByteArray()
+                message.removeCheckSum.toByteArray(Charsets.UTF_8)
             else
                 ByteArray(0)
         }
@@ -213,7 +213,7 @@ class SocketOption(
             HeadTail.NONE -> message.append(input.read().toChar())
         }
 
-        var result = message.removePrefix(mEncryptionPrefix).toString().toByteArray()
+        var result = message.removePrefix(mEncryptionPrefix).toString().toByteArray(Charsets.UTF_8)
         if (mUseCompression || !mPreSharedKey.isNullOrEmpty())
             result = result.fromBase64
         result = decrypt(result)
@@ -239,7 +239,7 @@ class SocketOption(
         if (encrypt) result = encrypt(result)
 
         if (compress || encrypt) result = result.toBase64
-        if (encrypt) result = (mEncryptionPrefix.toByteArray()) + result
+        if (encrypt) result = (mEncryptionPrefix.toByteArray(Charsets.UTF_8)) + result
 
         result = addCheckSum(result)
         return addHeadTail(result)

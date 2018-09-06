@@ -19,7 +19,7 @@ class EncryptCompressTest {
     @Test
     fun encryptDecryptBytes() {
         val password = "1234"
-        val original = "Hello".toByteArray()
+        val original = "Hello".toByteArray(Charsets.UTF_8)
         val enc = CompressEncrypt.encrypt(original, password, false)//for some reason PKCS7 breaks in unit test
         val dec = CompressEncrypt.decrypt(enc, password, false)
         Assertions.assertArrayEquals(original, dec)
@@ -36,7 +36,7 @@ class EncryptCompressTest {
 
     @Test
     fun compressDecompressString() {
-        val original = "Hello".toByteArray()
+        val original = "Hello".toByteArray(Charsets.UTF_8)
         val compressed = CompressEncrypt.compress(original)
         val decompressed = CompressEncrypt.decompress(compressed)
         Assertions.assertArrayEquals(original, decompressed)
@@ -44,7 +44,7 @@ class EncryptCompressTest {
 
     @Test
     fun compressDecompressBytes() {
-        val original = "Hello".toByteArray()
+        val original = "Hello".toByteArray(Charsets.UTF_8)
         val compressed = CompressEncrypt.compress(original)
         val decompressed = CompressEncrypt.decompress(compressed)
         Assertions.assertArrayEquals(original, decompressed)

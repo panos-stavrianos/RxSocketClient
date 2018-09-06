@@ -56,7 +56,7 @@ class Communication : Worker() {
 
                                 mClient.send("Hey", true, compress = true)//Send String
 
-                                mClient.send("Hello".toByteArray(), true)//Send Bytes
+                                mClient.send("Hello".toByteArray(Charsets.UTF_8), true)//Send Bytes
 
                                 //Send File
                                 // val path = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES).absolutePath + "/1.jpg"
@@ -86,7 +86,7 @@ class Communication : Worker() {
     companion object {
 
         private val TAG = Communication::class.java.simpleName
-        private val HEART_BEAT = "beep".toByteArray()
+        private val HEART_BEAT = "beep".toByteArray(Charsets.UTF_8)
         private const val first = "Hello World"
         private const val host = "192.168.1.172"
         private const val port = 30011

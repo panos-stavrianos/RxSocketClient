@@ -33,7 +33,7 @@ val ByteArray.fromBase64: ByteArray get() = Base64.decodeBase64(this)
 object CompressEncrypt {
 
 
-    fun encrypt(plaintext: String, password: String, usePKCS7: Boolean = true): ByteArray = encrypt(plaintext.toByteArray(), password, usePKCS7)
+    fun encrypt(plaintext: String, password: String, usePKCS7: Boolean = true): ByteArray = encrypt(plaintext.toByteArray(Charsets.UTF_8), password, usePKCS7)
 
     fun encrypt(plaintext: ByteArray, password: String, usePKCS7: Boolean = true): ByteArray {
         if (password.isEmpty()) return ByteArray(0)
@@ -249,7 +249,7 @@ object CompressEncrypt {
         return path
     }
 
-    fun decompress(data: ByteArray): ByteArray = GZIPInputStream(data.inputStream()).bufferedReader(UTF_8).use { it.readText() }.toByteArray()
+    fun decompress(data: ByteArray): ByteArray = GZIPInputStream(data.inputStream()).bufferedReader(UTF_8).use { it.readText() }.toByteArray(Charsets.UTF_8)
 
     fun decompressFile(path: String): String {
         try {

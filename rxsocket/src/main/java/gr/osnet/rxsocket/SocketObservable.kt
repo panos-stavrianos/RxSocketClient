@@ -141,7 +141,7 @@ class SocketObservable(private val mConfig: SocketConfig, val mSocket: Socket, v
 
                 val input = mSocket.getInputStream().bufferedReader()
                 while (!mReadThread.isInterrupted && mSocket.isConnected) {
-                    val data = mOption?.read(input) ?: input.readText().toByteArray()
+                    val data = mOption?.read(input) ?: input.readText().toByteArray(Charsets.UTF_8)
 
                     if (data.isNotEmpty()) {
                         val deltaTime = System.currentTimeMillis() - time

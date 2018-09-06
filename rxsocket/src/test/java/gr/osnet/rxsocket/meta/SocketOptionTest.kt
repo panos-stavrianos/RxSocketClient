@@ -10,7 +10,7 @@ internal class SocketOptionTest {
 
     @Test
     fun add_remove_HeadTail() {
-        val original = "Hello".toByteArray()
+        val original = "Hello".toByteArray(Charsets.UTF_8)
         val mOptionHasHead = SocketOption.Builder()
                 .setHead(2)
                 .build()
@@ -24,16 +24,16 @@ internal class SocketOptionTest {
                 .setTail(3)
                 .build()
 
-        Assertions.assertArrayEquals(mOptionHasHead.addHeadTail(original), ByteArray(1) { 2 } + "Hello".toByteArray())
+        Assertions.assertArrayEquals(mOptionHasHead.addHeadTail(original), ByteArray(1) { 2 } + "Hello".toByteArray(Charsets.UTF_8))
 
-        Assertions.assertArrayEquals(mOptionHasTail.addHeadTail(original), "Hello".toByteArray() + ByteArray(1) { 3 })
+        Assertions.assertArrayEquals(mOptionHasTail.addHeadTail(original), "Hello".toByteArray(Charsets.UTF_8) + ByteArray(1) { 3 })
 
-        Assertions.assertArrayEquals(mOptionHasBoth.addHeadTail(original), ByteArray(1) { 2 } + "Hello".toByteArray() + ByteArray(1) { 3 })
+        Assertions.assertArrayEquals(mOptionHasBoth.addHeadTail(original), ByteArray(1) { 2 } + "Hello".toByteArray(Charsets.UTF_8) + ByteArray(1) { 3 })
     }
 
     @Test
     fun add_remove_CheckSum() {
-        val original = "123Hello456789Hello".toByteArray()
+        val original = "123Hello456789Hello".toByteArray(Charsets.UTF_8)
         val mOptionHasCheckSum = SocketOption.Builder()
                 .useCheckSum(true)
                 .build()
@@ -41,11 +41,11 @@ internal class SocketOptionTest {
         val mOptionHasNotCheckSum = SocketOption.Builder()
                 .build()
 
-        Assertions.assertArrayEquals(mOptionHasCheckSum.addCheckSum(original), "123Hello456789Hello05C5".toByteArray())
+        Assertions.assertArrayEquals(mOptionHasCheckSum.addCheckSum(original), "123Hello456789Hello05C5".toByteArray(Charsets.UTF_8))
         Assertions.assertArrayEquals(mOptionHasNotCheckSum.addCheckSum(original), original)
 
-        Assertions.assertArrayEquals(mOptionHasCheckSum.checkCheckSum("123Hello456789Hello05C5".toByteArray()), original)
-        Assertions.assertArrayEquals(mOptionHasNotCheckSum.checkCheckSum("123Hello456789Hello".toByteArray()), original)
+        Assertions.assertArrayEquals(mOptionHasCheckSum.checkCheckSum("123Hello456789Hello05C5".toByteArray(Charsets.UTF_8)), original)
+        Assertions.assertArrayEquals(mOptionHasNotCheckSum.checkCheckSum("123Hello456789Hello".toByteArray(Charsets.UTF_8)), original)
     }
 
     @Test
@@ -61,9 +61,9 @@ internal class SocketOptionTest {
                 .usePKCS7(false)
                 .build()
 
-        val compressed = mOptionEncryptCompress.compress(original.toByteArray())
+        val compressed = mOptionEncryptCompress.compress(original.toByteArray(Charsets.UTF_8))
         val enc = mOptionEncryptCompress.encrypt(compressed).toBase64
-        println(original.toByteArray().size)
+        println(original.toByteArray(Charsets.UTF_8).size)
         println(compressed.size)
         val dec = mOptionEncryptCompress.decrypt(enc.fromBase64)
         val decompressed = mOptionEncryptCompress.decompress(dec)
@@ -94,7 +94,7 @@ internal class SocketOptionTest {
         while (bufferedReader.ready()) {
             val data = bufferedReader.readText()
             print(data)
-            bufferedWriter.write(mOption.pack(data.toByteArray(), true, true).toString)
+            bufferedWriter.write(mOption.pack(data.toByteArray(Charsets.UTF_8), true, true).toString)
         }
         bufferedReader.close()
         bufferedWriter.close()
