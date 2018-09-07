@@ -177,14 +177,27 @@ We also have a random 'salt' and 'iv' of 16bytes
 
 For the actual encryption we are going to use AES/CBC with two padding choices,
 either PKCS5Padding or PKCS7Padding.(For some reason PKCS7 breaks in unit tests.)
-
+___
 After we encrypt our data we need to send the iv and salt along with the encrypted data so the decryption will be possible.
 
 So we add them at the beginning of the message
 
-|______iv______|______salt______|______encrypted_data______|
-|______16 Bytes______|______16 Bytes______|______n Bytes______|
+* ______iv______ + ______salt______ + ______encrypted_data______
 
+* ______16 Bytes______ + ______16 Bytes______ + ______n Bytes______
+
+___
+Before the decrypt part we need to split the received data.
+This can be done like:
+```
+iv=encrypted.getRange(0,15)
+salt=encrypted.getRange(16,31)
+clear_encrypted=encrypted.getRange(32,encrypted.size)
+```
+Then we use the salt and the pre shared key to create the "big key"
+And Last we use the iv to decrypt the message.
+
+###### All this is of course already implement on the library but you need to handle the server side.
 
 # License
       Copyright (c) 2017 codeestX
