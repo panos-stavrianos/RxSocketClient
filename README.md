@@ -192,9 +192,10 @@ This can be done like:
 ```
 iv=encrypted.getRange(0,15)
 salt=encrypted.getRange(16,31)
-clear_encrypted=encrypted.getRange(32,encrypted.size)
+clear_encrypted=encrypted.getRange(32,encrypted.size-1)
 ```
-Then we use the salt and the pre shared key to create the "big key"
+Then we use the salt and the pre shared key to create the 'big key'
+
 And Last we use the iv to decrypt the message.
 
 ###### All this is of course already implement on the library but you need to handle the server side.
