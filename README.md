@@ -172,8 +172,8 @@ There are some static parameters here... In time i will add more customization.
 
 But for now we use:
 
-"PBKDF2WithHmacSHA1" for the creation of the key with 100 iterations and 128 key length.
-We also have a random 'salt' and 'iv' of 16bytes
+"PBKDF2WithHmacSHA1" for the creation of the 'big', with 100 iterations and 128 key length.
+We also have a random 'salt' and 'iv' of 16 bytes
 
 For the actual encryption we are going to use AES/CBC with two padding choices,
 either PKCS5Padding or PKCS7Padding.(For some reason PKCS7 breaks in unit tests.)
@@ -187,8 +187,8 @@ So we add them at the beginning of the message
 * ______16 Bytes______ + ______16 Bytes______ + ______n Bytes______
 
 ___
-Before the decrypt part we need to split the received data.
-This can be done like:
+Before the decrypt part, we need to split the received data.
+This can be done like this: (_not real code_)
 ```
 iv=encrypted.getRange(0,15)
 salt=encrypted.getRange(16,31)
