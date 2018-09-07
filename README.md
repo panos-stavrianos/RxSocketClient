@@ -58,7 +58,7 @@ val mClient = RxSocketClient
 | Head | Optional | appending bytes at head when sending data |
 | Tail | Optional | appending bytes at last when sending data |
 
-### connect
+### Connect
 ```kotlin
 val disposables = CompositeDisposable() // Just good practice
 mClient.connect()
@@ -86,20 +86,20 @@ mClient.connect()
     
 ```
 
-### disconnect
+### Disconnect
 ```kotlin
 mClient.disconnect()
-//or if you want you can force the error disconnect
+//or you can force the error disconnect
 mClient.disconnectWithError(Throwable("Something bad happend"))
 
 //In case you have multiple disposables you can use CompositeDisposable to add and dispose them all together
 disposables.clear()
 ```
 
-### send
+### Send
 There are three send methods, for string, bytes and file.
 There also two optional boolean parameters for compress and encrypt.
-If you pass a boolean value it will ignore the current configuration ( init )
+If you pass a boolean value it will ignore the current configuration (init)
 
 ```kotlin
 mClient.send(string)
@@ -109,6 +109,62 @@ mClient.sendFile(path)
 mClient.send(string, encrypt = false, compress =  true)
 mClient.send(bytes, encrypt = true, compress =  false)
 mClient.sendFile(path, encrypt = true, compress =  true)
+```
+
+### Examples
+##### Small useful fragments
+
+Init a socket with encryption, compression and head-tail
+```kotlin
+      val mClient = RxSocketClient
+                 .create(SocketConfig.Builder()
+                         .setIp(host)
+                         .setPort(port)
+                         .setCharset(Charsets.UTF_8)
+                         .setThreadStrategy(ThreadStrategy.SYNC)
+                         .setTimeout(5, TimeUnit.SECONDS)
+                         .build())
+                 .option(SocketOption.Builder()
+                         .setEncryption(key, EncryptionPadding.PKCS5Padding, "ENC:")
+                         .useCompression(true)
+                         .setHead(HEAD)
+                         .setTail(TAIL)
+                         .build())
+```
+Now we can imagine the following scenario
+```kotlin
+     override fun onResponse(data: String, timePassed: Long) {
+            Log.e(TAG, "onResponse in ${TimeUnit.MILLISECONDS.toSeconds(timePassed)} sec: $data")
+
+            when (data) {
+
+                      "Hey you" -> mClient.send("me?")
+
+                      "Send me some bytes" -> {
+                          mClient.send("Well ok...")
+                          mClient.send(ByteArray(4) { i -> (i * i).toByte() })
+                      }
+
+                      "Send me a selfie" -> {
+                          val path = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES).absolutePath + "/me.jpg"
+                          mClient.sendFile(path)
+                      }
+
+                      "Send me first the size of the (encrypted) file and then the actual file" -> {
+                          val path = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES).absolutePath + "/me.jpg"
+                          val encryptedPath = mClient.encryptFile(path)
+                          val encryptedFileSize = File(encryptedPath).length()
+                          mClient.send("File size: $encryptedFileSize", true, true)
+
+                          // In this case we already have encrypted our file and jpeg images are already compressed
+                          // so we pass false in both parameters
+                          mClient.sendFile(encryptedPath, encrypt = false, compress =  false)
+                      }
+
+                      "I am done with you..." -> mClient.disconnect() // or disposables.clear()
+
+            }
+          }
 ```
 
 # License

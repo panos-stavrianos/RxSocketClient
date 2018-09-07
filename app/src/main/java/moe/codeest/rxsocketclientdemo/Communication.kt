@@ -1,5 +1,6 @@
 package moe.codeest.rxsocketclientdemo
 
+import android.os.Environment
 import android.util.Log
 import androidx.work.*
 import gr.osnet.rxsocket.RxSocketClient
@@ -10,6 +11,7 @@ import gr.osnet.rxsocket.meta.SocketOption
 import gr.osnet.rxsocket.meta.ThreadStrategy
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.functions.Consumer
+import java.io.File
 import java.util.concurrent.TimeUnit
 
 
@@ -69,6 +71,26 @@ class Communication : Worker() {
 
                             override fun onResponse(data: String, timePassed: Long) {
                                 Log.e(TAG, "onResponse in ${TimeUnit.MILLISECONDS.toSeconds(timePassed)} sec: $data")
+                                when (data) {
+                                    "Hey you" -> mClient.send("me?")
+                                    "Send me some bytes" -> {
+                                        mClient.send("Well ok...")
+                                        mClient.send(ByteArray(4) { i -> (i * i).toByte() })
+                                    }
+                                    "Send me a selfie" -> {
+                                        val path = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES).absolutePath + "/me.jpg"
+                                        mClient.sendFile(path)
+                                    }
+                                    "Send me first the size of the (encrypted) file and then the actual file" -> {
+                                        val path = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES).absolutePath + "/me.jpg"
+                                        val encryptedPath = mClient.encryptFile(path)
+                                        val encryptedFileSize = File(encryptedPath).length()
+                                        mClient.send("File size: $encryptedFileSize", true, true)
+                                        mClient.sendFile(encryptedPath)
+                                    }
+                                    "I am done with you..." -> mClient.disconnect()//or disposables.clear()
+                                }
+
                             }
                         },
                         Consumer {
