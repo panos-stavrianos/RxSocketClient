@@ -43,7 +43,7 @@ val mClient = RxSocketClient
                 .setTail(TAIL)
                 .setCheckSum("ACK".toByteArray(), "NAK".toByteArray())
                 .setEncryption("pre shared password", EncryptionPadding.PKCS5Padding, "ENC:")
-                .setFirstContact(first)//FirstContact is always not compressed or encrypted
+                .setFirstContact(first)//FirstContact is always not compressed nor encrypted
                 .useCompression(true)
                 .build())
 ```
@@ -128,7 +128,7 @@ Init a socket with encryption, compression and head-tail
                          .setTimeout(5, TimeUnit.SECONDS)
                          .build())
                  .option(SocketOption.Builder()
-                         .setEncryption(key, EncryptionPadding.PKCS5Padding, "ENC:")
+                         .setEncryption("supersecretpassword", EncryptionPadding.PKCS5Padding, "ENC:")
                          .useCompression(true)
                          .setHead(HEAD)
                          .setTail(TAIL)
