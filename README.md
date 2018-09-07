@@ -183,6 +183,7 @@ After we encrypt our data we need to send the iv and salt along with the encrypt
 So we add them at the beginning of the message
 
 |______iv______|______salt______|______encrypted_data______|
+|______16 Bytes______|______16 Bytes______|______n Bytes______|
 
 
 # License
