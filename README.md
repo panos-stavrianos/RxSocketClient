@@ -25,6 +25,8 @@ dependencies {
 ```
 
 # Usage
+###### All examples are in kotlin
+
 ### Init
 ```kotlin
 val mClient = RxSocketClient
