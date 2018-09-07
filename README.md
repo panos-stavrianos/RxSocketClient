@@ -95,7 +95,7 @@ mClient.disconnect()
 //or you can force the error disconnect
 mClient.disconnectWithError(Throwable("Something bad happend"))
 
-//In case you have multiple disposables you can use CompositeDisposable to add and dispose them all together
+//In case you have multiple disposables, you can use CompositeDisposable to add and dispose them all together
 disposables.clear()
 ```
 

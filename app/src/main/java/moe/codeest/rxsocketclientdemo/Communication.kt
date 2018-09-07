@@ -75,7 +75,7 @@ class Communication : Worker() {
                                     "Hey you" -> mClient.send("me?")
                                     "Send me some bytes" -> {
                                         mClient.send("Well ok...")
-                                        mClient.send(ByteArray(4) { i -> (i * i).toByte() })
+                                        mClient.send(byteArrayOf(1, 2, 3, 4))
                                     }
                                     "Send me a selfie" -> {
                                         val path = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES).absolutePath + "/me.jpg"
