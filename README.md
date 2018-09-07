@@ -7,7 +7,7 @@ This project is a fork from [codeestX](https://github.com/codeestX/RxSocketClien
 * CheckSum (with Ok - Wrong Responses)
 * File send
 
-# Usage
+# Setup
 1. Add the JitPack repository to your build.gradle file
 ```gradle
 allprojects {
@@ -24,6 +24,7 @@ dependencies {
 }
 ```
 
+# Usage
 ### Init
 ```kotlin
 val mClient = RxSocketClient
