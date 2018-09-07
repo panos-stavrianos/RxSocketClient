@@ -190,9 +190,9 @@ ___
 Before the decrypt part, we need to split the received data.
 This can be done like this: (_not real code_)
 ```
-iv=encrypted.getRange(0,15)
-salt=encrypted.getRange(16,31)
-clear_encrypted=encrypted.getRange(32,encrypted.size-1)
+iv = encrypted.getRange(0,15)
+salt = encrypted.getRange(16,31)
+clear_encrypted = encrypted.getRange(32,encrypted.size-1)
 ```
 Then we use the salt and the pre shared key to create the 'big key'
 
