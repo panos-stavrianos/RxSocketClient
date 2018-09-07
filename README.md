@@ -4,42 +4,45 @@ This project is a fork from [codeestX](https://github.com/codeestX/RxSocketClien
 # Added
 * compression
 * encryption
-* CRC16 (with Ok - Wrong Responses)
+* CheckSum (with Ok - Wrong Responses)
 * First Contact Message
 
 # Usage
 
-Step 1. Add the JitPack repository to your build file
+1. Add the JitPack repository to your build.gradle file
+```gradle
+allprojects {
+    repositories {
+        maven { url "https://jitpack.io" }
+    }
+}
+```
 
-	allprojects {
-		repositories {
-			...
-			maven { url "https://jitpack.io" }
-		}
-	}
-   
-Step 2. Add the dependency
-
-	dependencies {
-	        implementation 'com.github.codeestX:RxSocketClient:v1.0.1'
-	}
-	
+2. Add the dependency
+```gradle
+dependencies {
+        implementation 'com.github.codeestX:RxSocketClient:v1.0.1'
+}
+```
 ### init
-```java
-SocketClient mClient = RxSocketClient
-                .create(new SocketConfig.Builder()
-                        .setIp(IP)
-                        .setPort(PORT)
-                        .setCharset(Charsets.UTF_8)
-                        .setThreadStrategy(ThreadStrategy.ASYNC)
-                        .setTimeout(30 * 1000)
-                        .build())
-                .option(new SocketOption.Builder()
-                        .setHeartBeat(HEART_BEAT, 60 * 1000)
-                        .setHead(HEAD)
-                        .setTail(TAIL)
-                        .build());
-
+```kotlin
+val mClient = RxSocketClient
+        .create(SocketConfig.Builder()
+                .setIp("192.168.1.2")
+                .setPort(5000)
+                .setCharset(Charsets.UTF_8)
+                .setThreadStrategy(ThreadStrategy.SYNC)
+                .setTimeout(5, TimeUnit.SECONDS)
+                .build())
+        .option(SocketOption.Builder()
+                .setHeartBeat("beep".toByteArray(), 15, TimeUnit.SECONDS)
+                .setHead(HEAD)
+                .setTail(TAIL)
+                .setCheckSum("ACK".toByteArray(), "NAK".toByteArray())
+                .setEncryption("pre shared password", EncryptionPadding.PKCS5Padding, "ENC:")
+                .setFirstContact(first)//FirstContact is always not compressed or encrypted
+                .useCompression(true)
+                .build())
 ```
 | value | default | description |
 | :--: | :--: | :--: |
@@ -53,42 +56,56 @@ SocketClient mClient = RxSocketClient
 | Tail | Optional | appending bytes at last when sending data, not included heartbeat |
 
 ### connect
-```java
-Disposable ref = mClient.connect()
-                // anything else what you can do with RxJava
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(new SocketSubscriber() {
-                   
-                    @Override
-                    public void onConnected() {}
-                   
-                    @Override
-                    public void onResponse(@NotNull String data, long timePassed) {}
-                   
-                    @Override
-                    public void onDisconnectedWithError(@NotNull Throwable throwable, long timePassed) {}
-                   
-                    @Override
-                    public void onDisconnected(long timePassed) {}
-               
-                }, throwable -> {
-                    Log.e(TAG, throwable.toString());
-                });
+```kotlin
+val disposables = CompositeDisposable() // Just good practice
+mClient.connect()
+        .doOnSubscribe { disposables.add(it) }
+        .subscribe(
+                object : SocketSubscriber() {
+                    override fun onConnected() {
+                    }
+
+                    override fun onDisconnected(timePassed: Long) {
+                        Log.e(TAG, "onDisconnected in ${TimeUnit.MILLISECONDS.toSeconds(timePassed)} sec")
+                    }
+
+                    override fun onDisconnectedWithError(throwable: Throwable, timePassed: Long) {
+                        Log.e(TAG, "onDisconnectedWithError in ${TimeUnit.MILLISECONDS.toSeconds(timePassed)} sec, cause: ${throwable.message}")
+                    }
+
+                    override fun onResponse(data: String, timePassed: Long) {
+                        Log.e(TAG, "onResponse in ${TimeUnit.MILLISECONDS.toSeconds(timePassed)} sec: $data")
+                    }
+                },
+                Consumer {
+                    it.printStackTrace()
+                })
     
 ```
 
 ### disconnect
-```java
-mClient.disconnect();
-//or
-ref.dispose();
+```kotlin
+mClient.disconnect()
+//or if you want you can force the error disconnect
+mClient.disconnectWithError(Throwable("Something bad happend"))
+
+//In case you have multiple disposables you can use CompositeDisposable to add and dispose them all together
+disposables.clear()
 ```
 
-### sendData
-```java
-mClient.sendData(bytes);
+### send
+There are three send methods, for string, bytes and file.
+There also two optional boolean parameters for compress and encrypt.
+If you pass a boolean value it will ignore the current configuration ( init )
+
+```kotlin
+mClient.send(string)
+mClient.send(bytes)
+mClient.sendFile(path)
 //or
-mClient.sendData(string);
+mClient.send(string, encrypt = false, compress =  true)
+mClient.send(bytes, encrypt = true, compress =  false)
+mClient.sendFile(path, encrypt = true, compress =  true)
 ```
 
 # License

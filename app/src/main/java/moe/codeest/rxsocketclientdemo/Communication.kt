@@ -36,12 +36,13 @@ class Communication : Worker() {
                         .setTimeout(5, TimeUnit.SECONDS)
                         .build())
                 .option(SocketOption.Builder()
-                        //.setHeartBeat(HEART_BEAT, 15, TimeUnit.SECONDS)
-                        .setEncryption(key, EncryptionPadding.PKCS5Padding, "ENC^")//if you pass a key then everything you receive it will decrypted automatically
+                        .setHeartBeat(HEART_BEAT, 15, TimeUnit.SECONDS)
+                        .setCheckSum("ACK".toByteArray(), "NAK".toByteArray())
+                        .setEncryption(key, EncryptionPadding.PKCS5Padding, "ENC:")
+                        .setFirstContact(first)//FirstContact is always not compressed or encrypted
                         .useCompression(true)
                         .setHead(HEAD)
                         .setTail(TAIL)
-                        .setFirstContact(first)
                         .build())
 
 
@@ -52,8 +53,7 @@ class Communication : Worker() {
                             override fun onConnected() {
                                 Log.e(TAG, "onConnected")
 
-                                mClient.send("Hello!", true, true)
-
+                                mClient.send("Hello!", encrypt = true, compress = true)
                                 //Send File
                                 // val path = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES).absolutePath + "/1.jpg"
                                 // mClient.sendFile(path, false)
