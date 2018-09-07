@@ -1,7 +1,7 @@
 # RxSocket (Under Development)
 This project is a fork from [codeestX](https://github.com/codeestX/RxSocketClient/)
 
-# Futures Added
+# Features Added
 * Compression
 * Encryption
 * CheckSum (with Ok - Wrong Responses)
