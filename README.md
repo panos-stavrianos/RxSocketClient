@@ -157,7 +157,7 @@ Now we can imagine the following scenario
                           val path = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES).absolutePath + "/me.jpg"
                           val encryptedPath = mClient.encryptFile(path)
                           val encryptedFileSize = File(encryptedPath).length()
-                          mClient.send("File size: $encryptedFileSize", true, true)
+                          mClient.send("File size: $encryptedFileSize")
 
                           // In this case we already have encrypted our file and jpeg images are already compressed
                           // so we pass false in both parameters
