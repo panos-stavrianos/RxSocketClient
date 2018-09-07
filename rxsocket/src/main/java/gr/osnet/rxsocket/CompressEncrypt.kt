@@ -4,7 +4,6 @@ package gr.osnet.rxsocket
 
 import com.google.common.io.ByteStreams
 import gr.osnet.rxsocket.meta.toString
-import mu.KotlinLogging
 import org.apache.commons.codec.binary.Base64
 import java.io.*
 import java.security.InvalidAlgorithmParameterException
@@ -24,7 +23,6 @@ import kotlin.text.Charsets.UTF_8
 /**
  * Created by panos on 15/11/2017.
  */
-private val logger = KotlinLogging.logger {}
 
 val ByteArray.toBase64: ByteArray get() = Base64.encodeBase64(this)
 
@@ -40,7 +38,7 @@ object CompressEncrypt {
         val random = SecureRandom()
         val salt = ByteArray(16)
         random.nextBytes(salt)
-        val spec = PBEKeySpec(password.toCharArray(), salt, 100, 128) // AES-256
+        val spec = PBEKeySpec(password.toCharArray(), salt, 100, 128)
         val f = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA1")
 
         val keyBytes = f.generateSecret(spec).encoded
@@ -68,7 +66,7 @@ object CompressEncrypt {
         val random = SecureRandom()
         val salt = ByteArray(16)
         random.nextBytes(salt)
-        val spec = PBEKeySpec(password.toCharArray(), salt, 100, 128) // AES-256
+        val spec = PBEKeySpec(password.toCharArray(), salt, 100, 128)
         val f = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA1")
 
         val keyBytes = f.generateSecret(spec).encoded
@@ -110,7 +108,7 @@ object CompressEncrypt {
             System.arraycopy(data, 16, salt, 0, 16)
             System.arraycopy(data, 32, cipherBytes, 0, data.size - 2 * 16)
 
-            val spec = PBEKeySpec(password.toCharArray(), salt, 100, 128) // AES-256
+            val spec = PBEKeySpec(password.toCharArray(), salt, 100, 128)
             val f = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA1")
 
             val keyBytes = f.generateSecret(spec).encoded
@@ -155,7 +153,7 @@ object CompressEncrypt {
             val salt = ByteArray(16)
             fis.read(salt)
 
-            val spec = PBEKeySpec(password.toCharArray(), salt, 100, 128) // AES-256
+            val spec = PBEKeySpec(password.toCharArray(), salt, 100, 128)
             val f = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA1")
 
             val keyBytes = f.generateSecret(spec).encoded
@@ -179,10 +177,9 @@ object CompressEncrypt {
                     }
                     fos.write(buf, 0, r)
                     total += r.toLong()
-
                 }
-            } catch (e: Exception) {
-                logger.info { "total $total" }
+            } catch (e: Throwable) {
+                e.printStackTrace()
             }
             fos.flush()
             fos.close()

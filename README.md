@@ -43,7 +43,7 @@ val mClient = RxSocketClient
                 .setTail(TAIL)
                 .setCheckSum("ACK".toByteArray(), "NAK".toByteArray())
                 .setEncryption("pre shared password", EncryptionPadding.PKCS5Padding, "ENC:")
-                .setFirstContact(first)//FirstContact is always not compressed nor encrypted
+                .setFirstContact(first)//FirstContact is neither compressed nor encrypted
                 .useCompression(true)
                 .build())
 ```
@@ -160,16 +160,31 @@ Now we can imagine the following scenario
 
                           // In this case we already have encrypted our file and jpeg images are already compressed
                           // so we pass false in both parameters
-                          mClient.sendFile(encryptedPath, encrypt = false, compress =  false)
+                          mClient.sedFile(encryptedPath, encrypt = false, compress =  false)
                       }
 
                       "I am done with you..." -> mClient.disconnect() // or disposables.clear()
               }
      }
 ```
+### About Encryption(AES)
+There are some static parameters here... In time i will add more customization.
+
+But for now we use:
+"PBKDF2WithHmacSHA1" for the creation of the key with 100 iterations and 128 key length
+We also have a random 'salt' and 'iv' of 16bytes
+
+For the actual encryption we are going to use AES/CBC with two padding choices.
+Either PKCS5Padding or PKCS7Padding.(For some reason PKCS7 breaks in unit tests.)
+
+After we encrypt our data we need to send the iv and salt along with the encrypted data so the decryption will be possible...
+
+So we add them at the beginning
+
+__iv__ __salt__ __encrypted_data__
+
 
 # License
-
       Copyright (c) 2017 codeestX
 
       Licensed under the Apache License, Version 2.0 (the "License");
