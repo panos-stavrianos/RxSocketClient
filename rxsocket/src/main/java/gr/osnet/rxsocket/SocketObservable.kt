@@ -82,9 +82,9 @@ class SocketObservable(private val mConfig: SocketConfig, val mSocket: Socket, v
         fun onNext(data: ByteArray) {
             if (mSocket.isConnected) {
                 mClient.lastExchange = System.currentTimeMillis()
-                val message = mOption?.checkCheckSum(data) ?: data
+                val message = mOption?.mCheckSumConfig?.checkCheckSum(data) ?: data
 
-                mOption?.apply {
+                mOption?.mCheckSumConfig?.apply {
                     if (isOk(message)) return@onNext
                     if (isWrong(message)) {
                         logger.info { "Server send NAK" }
@@ -94,19 +94,15 @@ class SocketObservable(private val mConfig: SocketConfig, val mSocket: Socket, v
                     }
                 }
                 if (message.isEmpty()) {
-                    mOption?.apply {
-                        if (mOption.mOk != null && mOption.mWrong != null) {
-                            logger.info { "Server send wrong CheckSum: " + data.toString }
-                            mClient.send(mOption.mWrong, false)
-                            mClient.send("END", false)
-                            state = SocketState.CLOSE_WITH_ERROR
-                            dispose()
-                        }
+                    mOption?.mCheckSumConfig?.apply {
+                        logger.info { "Server send wrong CheckSum: " + data.toString }
+                        mClient.send(wrong, false, false)
+                        mClient.send("END", false, false)
+                        mClient.disconnectWithError(Throwable("Server send wrong CheckSum"))
                     }
                 } else {
-                    mOption?.apply {
-                        if (mOption.mOk != null && mOption.mWrong != null)
-                            mClient.send(mOption.mOk, false)
+                    mOption?.mCheckSumConfig?.apply {
+                        mClient.send(ok, false)
                     }
                     observer?.onNext(DataWrapper(SocketState.CONNECTED, message))
                 }
@@ -158,7 +154,6 @@ class SocketObservable(private val mConfig: SocketConfig, val mSocket: Socket, v
                     Thread.sleep(averageTime / 4)
                 }
             } catch (throwable: Throwable) {
-                throwable.printStackTrace()
                 mClient.disconnectWithError(throwable)
             }
         }

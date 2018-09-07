@@ -35,17 +35,19 @@ internal class SocketOptionTest {
     fun add_remove_CheckSum() {
         val original = "123Hello456789Hello".toByteArray(Charsets.UTF_8)
         val mOptionHasCheckSum = SocketOption.Builder()
-                .useCheckSum(true)
+                .useCheckSum("OK".toByteArray(), "NAK".toByteArray())
                 .build()
 
         val mOptionHasNotCheckSum = SocketOption.Builder()
                 .build()
 
-        Assertions.assertArrayEquals(mOptionHasCheckSum.addCheckSum(original), "123Hello456789Hello05C5".toByteArray(Charsets.UTF_8))
-        Assertions.assertArrayEquals(mOptionHasNotCheckSum.addCheckSum(original), original)
+        Assertions.assertArrayEquals(mOptionHasCheckSum.mCheckSumConfig?.addCheckSum(original), "123Hello456789Hello05C5".toByteArray(Charsets.UTF_8))
+        Assertions.assertArrayEquals(mOptionHasNotCheckSum.mCheckSumConfig?.addCheckSum(original)
+                ?: original, original)
 
-        Assertions.assertArrayEquals(mOptionHasCheckSum.checkCheckSum("123Hello456789Hello05C5".toByteArray(Charsets.UTF_8)), original)
-        Assertions.assertArrayEquals(mOptionHasNotCheckSum.checkCheckSum("123Hello456789Hello".toByteArray(Charsets.UTF_8)), original)
+        Assertions.assertArrayEquals(mOptionHasCheckSum.mCheckSumConfig?.checkCheckSum("123Hello456789Hello05C5".toByteArray(Charsets.UTF_8)), original)
+        Assertions.assertArrayEquals(mOptionHasNotCheckSum.mCheckSumConfig?.checkCheckSum("123Hello456789Hello".toByteArray(Charsets.UTF_8))
+                ?: original, original)
     }
 
     @Test
@@ -85,7 +87,7 @@ internal class SocketOptionTest {
         val mOption = SocketOption.Builder()
                 .setPreSharedKey(password)//if you pass a key then everything you receive it will decrypted automatically
                 .useCompression(true)
-                .useCheckSum(false)
+                .useCheckSum("OK".toByteArray(), "NAK".toByteArray())
                 .setHead(2)
                 .setTail(3)
                 .setEncryptionPrefix("ENC^")

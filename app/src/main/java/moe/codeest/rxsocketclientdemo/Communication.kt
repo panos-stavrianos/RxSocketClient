@@ -35,16 +35,17 @@ class Communication : Worker() {
                         .setTimeout(5, TimeUnit.SECONDS)
                         .build())
                 .option(SocketOption.Builder()
-                        .setHeartBeat(HEART_BEAT, 15, TimeUnit.SECONDS)
+                        //.setHeartBeat(HEART_BEAT, 15, TimeUnit.SECONDS)
                         .setPreSharedKey(key)//if you pass a key then everything you receive it will decrypted automatically
                         .useCompression(true)
-                        .useCheckSum(false)
                         .setHead(HEAD)
                         .setTail(TAIL)
                         .setEncryptionPrefix("ENC^")
-                        .usePKCS7(false)
+                        .usePKCS7(true)
                         .setFirstContact(first)
                         .build())
+
+
         mClient.connect()
                 .doOnSubscribe { disposables.add(it) }
                 .subscribe(
@@ -52,11 +53,7 @@ class Communication : Worker() {
                             override fun onConnected() {
                                 Log.e(TAG, "onConnected")
 
-                                //You can use encryption by passing true on the send and sendFile
-
-                                mClient.send("Hey", true, compress = true)//Send String
-
-                                mClient.send("Hello".toByteArray(Charsets.UTF_8), true)//Send Bytes
+                                mClient.send(applicationContext.getString(R.string.data), true, true)
 
                                 //Send File
                                 // val path = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES).absolutePath + "/1.jpg"
@@ -87,9 +84,9 @@ class Communication : Worker() {
 
         private val TAG = Communication::class.java.simpleName
         private val HEART_BEAT = "beep".toByteArray(Charsets.UTF_8)
-        private const val first = "Hello World"
+        private const val first = "Hello Stranger"
         private const val host = "192.168.1.172"
-        private const val port = 30011
+        private const val port = 30010
         private const val key = "1234"
         private const val HEAD: Byte = 2
         private const val TAIL: Byte = 3

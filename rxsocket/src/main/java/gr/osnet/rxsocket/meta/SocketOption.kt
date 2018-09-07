@@ -33,11 +33,9 @@ val ByteArray.toString get() = String(this, Charsets.UTF_8)
 
 class SocketOption(
         val mHeartBeatConfig: HeartBeatConfig?,
+        val mCheckSumConfig: CheckSumConfig?,
         private val mHead: Byte?,
         private val mTail: Byte?,
-        val mOk: ByteArray?,
-        val mWrong: ByteArray?,
-        private val mUseCheckSum: Boolean = false,
         private val mUsePKCS7: Boolean = true,
         private val mUseCompression: Boolean = false,
         val mFirstContact: String?,
@@ -47,11 +45,9 @@ class SocketOption(
 
     private constructor (builder: Builder) : this(
             builder.mHeartBeatConfig,
+            builder.mCheckSumConfig,
             builder.mHead,
             builder.mTail,
-            builder.mOk,
-            builder.mWrong,
-            builder.mUseCheckSum,
             builder.mUsePKCS7,
             builder.mUseCompression,
             builder.mFirstContact,
@@ -63,19 +59,13 @@ class SocketOption(
         var mHeartBeatConfig: HeartBeatConfig? = null
             private set
 
+        var mCheckSumConfig: CheckSumConfig? = null
+            private set
+
         var mHead: Byte? = null
             private set
 
         var mTail: Byte? = null
-            private set
-
-        var mOk: ByteArray? = null
-            private set
-
-        var mWrong: ByteArray? = null
-            private set
-
-        var mUseCheckSum: Boolean = false
             private set
 
         var mUsePKCS7: Boolean = true
@@ -83,7 +73,6 @@ class SocketOption(
 
         var mUseCompression: Boolean = false
             private set
-
 
         var mFirstContact: String? = null
             private set
@@ -97,15 +86,12 @@ class SocketOption(
         fun setHeartBeat(data: ByteArray, interval: Long, units: TimeUnit = TimeUnit.MILLISECONDS) =
                 apply { this.mHeartBeatConfig = HeartBeatConfig(data, units.toMillis(interval)) }
 
+        fun useCheckSum(ok: ByteArray, wrong: ByteArray) =
+                apply { this.mCheckSumConfig = CheckSumConfig(ok, wrong) }
+
         fun setHead(head: Byte) = apply { this.mHead = head }
 
         fun setTail(tail: Byte) = apply { this.mTail = tail }
-
-        fun setOk(ok: ByteArray) = apply { this.mOk = ok }
-
-        fun setWrong(wrong: ByteArray) = apply { this.mWrong = wrong }
-
-        fun useCheckSum(useCheckSum: Boolean) = apply { this.mUseCheckSum = useCheckSum }
 
         fun setFirstContact(mFirstContact: String) = apply { this.mFirstContact = mFirstContact }
 
@@ -136,27 +122,6 @@ class SocketOption(
                     data +
                     (mTail?.let { tail -> ByteArray(1) { tail } } ?: ByteArray(0))
 
-
-    fun isOk(data: ByteArray): Boolean = mOk != null && mWrong != null && Arrays.equals(data, mOk)
-
-    fun isWrong(data: ByteArray): Boolean = mOk != null && mWrong != null && Arrays.equals(data, mOk)
-
-    fun addCheckSum(data: ByteArray): ByteArray =
-            if (mUseCheckSum)
-                data.toString.addCheckSum.toByteArray(Charsets.UTF_8)
-            else
-                data
-
-    fun checkCheckSum(data: ByteArray): ByteArray {
-        if (mUseCheckSum) {
-            val message = data.toString
-            return if (message.validateCheckSum)
-                message.removeCheckSum.toByteArray(Charsets.UTF_8)
-            else
-                ByteArray(0)
-        }
-        return data
-    }
 
     fun encrypt(data: ByteArray): ByteArray =
             mPreSharedKey?.let {
@@ -212,7 +177,6 @@ class SocketOption(
             }
             HeadTail.NONE -> message.append(input.read().toChar())
         }
-
         var result = message.removePrefix(mEncryptionPrefix).toString().toByteArray(Charsets.UTF_8)
         if (mUseCompression || !mPreSharedKey.isNullOrEmpty())
             result = result.fromBase64
@@ -241,9 +205,28 @@ class SocketOption(
         if (compress || encrypt) result = result.toBase64
         if (encrypt) result = (mEncryptionPrefix.toByteArray(Charsets.UTF_8)) + result
 
-        result = addCheckSum(result)
+        result = mCheckSumConfig?.addCheckSum(result) ?: result
         return addHeadTail(result)
     }
 
     class HeartBeatConfig(var data: ByteArray?, var interval: Long)
+    class CheckSumConfig(var ok: ByteArray, var wrong: ByteArray) {
+        fun isOk(data: ByteArray): Boolean = Arrays.equals(data, ok)
+
+        fun isWrong(data: ByteArray): Boolean = Arrays.equals(data, ok)
+
+        fun addCheckSum(data: ByteArray): ByteArray =
+                data.toString.addCheckSum.toByteArray(Charsets.UTF_8)
+
+        fun checkCheckSum(data: ByteArray): ByteArray {
+            val message = data.toString
+            return if (message.validateCheckSum)
+                message.removeCheckSum.toByteArray(Charsets.UTF_8)
+            else
+                ByteArray(0)
+        }
+
+
+    }
+
 }
