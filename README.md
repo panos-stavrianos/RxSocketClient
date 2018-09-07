@@ -140,8 +140,7 @@ Now we can imagine the following scenario
             Log.e(TAG, "onResponse in ${TimeUnit.MILLISECONDS.toSeconds(timePassed)} sec: $data")
 
             when (data) {
-
-                      "Hey you" -> mClient.send("me?")
+                      "Hey you" -> mClient.send("Who? Me?")
 
                       "Send me some bytes" -> {
                           mClient.send("Well ok...")
@@ -165,9 +164,8 @@ Now we can imagine the following scenario
                       }
 
                       "I am done with you..." -> mClient.disconnect() // or disposables.clear()
-
-            }
-          }
+              }
+     }
 ```
 
 # License
