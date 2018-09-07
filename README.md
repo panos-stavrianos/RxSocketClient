@@ -167,18 +167,19 @@ Now we can imagine the following scenario
               }
      }
 ```
+
 ### About Encryption(AES)
 There are some static parameters here... In time i will add more customization.
 
 But for now we use:
 
-"PBKDF2WithHmacSHA1" for the creation of the 'big', with 100 iterations and 128 key length.
-We also have a random 'salt' and 'iv' of 16 bytes
+"PBKDF2WithHmacSHA1" for the creation of the 'big key', with 100 iterations and 128 key length.
+We also have a random 'salt' and 'iv' of 16 bytes each
 
 For the actual encryption we are going to use AES/CBC with two padding choices,
 either PKCS5Padding or PKCS7Padding.(For some reason PKCS7 breaks in unit tests.)
 ___
-After we encrypt our data we need to send the iv and salt along with the encrypted data so the decryption will be possible.
+After we encrypt our data, we need to send the iv and salt along with the encrypted data so the decryption will be possible.
 
 So we add them at the beginning of the message
 
@@ -188,6 +189,7 @@ So we add them at the beginning of the message
 
 ___
 Before the decrypt part, we need to split the received data.
+
 This can be done like this: (_not real code_)
 ```
 iv = encrypted.getRange(0,15)
@@ -200,8 +202,13 @@ And Last we use the iv to decrypt the message.
 
 ###### All this is of course already implement on the library but you need to handle the server side.
 
+# Server
+Obviously you need a server! Unless you already have on you can try [this](https://packetsender.com/) for testing.
+
+At some point i will make some scripts (most likely python) to test all the features properly.
 # License
-      Copyright (c) 2017 codeestX
+      Copyright (c) 2017 codeestX (original)
+      Copyright (c) 2018 panos-stavrianos
 
       Licensed under the Apache License, Version 2.0 (the "License");
       you may not use this file except in compliance with the License.
