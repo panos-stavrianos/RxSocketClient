@@ -2,6 +2,7 @@
 This project is a fork from [codeestX](https://github.com/codeestX/RxSocketClient/)
 ###### TCP socket client Android library
 ###### Written in Kotlin, powered by RxJava2 
+
 # Features Added
 * Compression
 * Encryption
