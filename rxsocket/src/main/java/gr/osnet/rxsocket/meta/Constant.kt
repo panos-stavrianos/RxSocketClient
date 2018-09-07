@@ -50,3 +50,9 @@ object ThreadStrategy {
 
     const val ASYNC = 0x01
 }
+
+
+enum class EncryptionPadding(val padding: String) {
+    PKCS5Padding("PKCS5Padding"),
+    PKCS7Padding("PKCS7Padding"),
+}

@@ -35,7 +35,7 @@ internal class SocketOptionTest {
     fun add_remove_CheckSum() {
         val original = "123Hello456789Hello".toByteArray(Charsets.UTF_8)
         val mOptionHasCheckSum = SocketOption.Builder()
-                .useCheckSum("OK".toByteArray(), "NAK".toByteArray())
+                .setCheckSum("OK".toByteArray(), "NAK".toByteArray())
                 .build()
 
         val mOptionHasNotCheckSum = SocketOption.Builder()
@@ -57,10 +57,8 @@ internal class SocketOptionTest {
         val original = "123Hello456789Hello123123Hello456789Hello123123Hello456789Hello123123Hello456789Hello123123Hello456789Hello123123Hello456789Hello123123Hello456789Hello123123Hello456789Hello123123Hello456789Hello123123Hello456789Hello123123Hello456789Hello123"
 
         val mOptionEncryptCompress = SocketOption.Builder()
-                .setPreSharedKey(password)
                 .useCompression(true)
-                .setEncryptionPrefix("ENC^")
-                .usePKCS7(false)
+                .setEncryption(password, EncryptionPadding.PKCS5Padding, "ENC^")
                 .build()
 
         val compressed = mOptionEncryptCompress.compress(original.toByteArray(Charsets.UTF_8))
@@ -85,13 +83,10 @@ internal class SocketOptionTest {
         val bufferedWriter2 = File(deFormatted).bufferedWriter()
 
         val mOption = SocketOption.Builder()
-                .setPreSharedKey(password)//if you pass a key then everything you receive it will decrypted automatically
+                .setEncryption(password, EncryptionPadding.PKCS5Padding, "ENC^")
                 .useCompression(true)
-                .useCheckSum("OK".toByteArray(), "NAK".toByteArray())
                 .setHead(2)
                 .setTail(3)
-                .setEncryptionPrefix("ENC^")
-                .usePKCS7(false)
                 .build()
         while (bufferedReader.ready()) {
             val data = bufferedReader.readText()

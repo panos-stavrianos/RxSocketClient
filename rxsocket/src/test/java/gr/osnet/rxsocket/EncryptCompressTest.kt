@@ -1,5 +1,6 @@
 package gr.osnet.rxsocket
 
+import gr.osnet.rxsocket.meta.EncryptionPadding
 import gr.osnet.rxsocket.meta.toString
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
@@ -11,8 +12,8 @@ class EncryptCompressTest {
     fun encryptDecryptString() {
         val password = "1234"
         val original = "Hello"
-        val enc = CompressEncrypt.encrypt(original, password, false)//for some reason PKCS7 breaks in unit test
-        val dec = CompressEncrypt.decrypt(enc, password, false)
+        val enc = CompressEncrypt.encrypt(original, password, EncryptionPadding.PKCS5Padding.padding)//for some reason PKCS7 breaks in unit test
+        val dec = CompressEncrypt.decrypt(enc, password, EncryptionPadding.PKCS5Padding.padding)
         Assertions.assertEquals(original, dec.toString)
     }
 
@@ -20,8 +21,8 @@ class EncryptCompressTest {
     fun encryptDecryptBytes() {
         val password = "1234"
         val original = "Hello".toByteArray(Charsets.UTF_8)
-        val enc = CompressEncrypt.encrypt(original, password, false)//for some reason PKCS7 breaks in unit test
-        val dec = CompressEncrypt.decrypt(enc, password, false)
+        val enc = CompressEncrypt.encrypt(original, password, EncryptionPadding.PKCS5Padding.padding)//for some reason PKCS7 breaks in unit test
+        val dec = CompressEncrypt.decrypt(enc, password, EncryptionPadding.PKCS5Padding.padding)
         Assertions.assertArrayEquals(original, dec)
     }
 
@@ -29,8 +30,8 @@ class EncryptCompressTest {
     fun encryptDecryptFile() {
         val password = "1234"
         val original = "src/test/resources/1.jpg"
-        val enc = CompressEncrypt.encryptFile(original, password, false)//for some reason PKCS7 breaks in unit test
-        val dec = CompressEncrypt.decryptFile(enc, password, false)
+        val enc = CompressEncrypt.encryptFile(original, password, EncryptionPadding.PKCS5Padding.padding)//for some reason PKCS7 breaks in unit test
+        val dec = CompressEncrypt.decryptFile(enc, password, EncryptionPadding.PKCS5Padding.padding)
 
     }
 

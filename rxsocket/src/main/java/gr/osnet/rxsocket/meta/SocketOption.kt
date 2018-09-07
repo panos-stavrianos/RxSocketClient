@@ -34,25 +34,21 @@ val ByteArray.toString get() = String(this, Charsets.UTF_8)
 class SocketOption(
         val mHeartBeatConfig: HeartBeatConfig?,
         val mCheckSumConfig: CheckSumConfig?,
+        val mEncryptionConfig: EncryptionConfig?,
         private val mHead: Byte?,
         private val mTail: Byte?,
-        private val mUsePKCS7: Boolean = true,
         private val mUseCompression: Boolean = false,
-        val mFirstContact: String?,
-        private val mPreSharedKey: String?,
-        private val mEncryptionPrefix: String = ""
+        val mFirstContact: String?
 ) {
 
     private constructor (builder: Builder) : this(
             builder.mHeartBeatConfig,
             builder.mCheckSumConfig,
+            builder.mEncryptionConfig,
             builder.mHead,
             builder.mTail,
-            builder.mUsePKCS7,
             builder.mUseCompression,
-            builder.mFirstContact,
-            builder.mPreSharedKey,
-            builder.mEncryptionPrefix
+            builder.mFirstContact
     )
 
     class Builder {
@@ -62,13 +58,13 @@ class SocketOption(
         var mCheckSumConfig: CheckSumConfig? = null
             private set
 
+        var mEncryptionConfig: EncryptionConfig? = null
+            private set
+
         var mHead: Byte? = null
             private set
 
         var mTail: Byte? = null
-            private set
-
-        var mUsePKCS7: Boolean = true
             private set
 
         var mUseCompression: Boolean = false
@@ -77,29 +73,23 @@ class SocketOption(
         var mFirstContact: String? = null
             private set
 
-        var mPreSharedKey: String? = null
-            private set
-
-        var mEncryptionPrefix: String = ""
-            private set
-
         fun setHeartBeat(data: ByteArray, interval: Long, units: TimeUnit = TimeUnit.MILLISECONDS) =
                 apply { this.mHeartBeatConfig = HeartBeatConfig(data, units.toMillis(interval)) }
 
-        fun useCheckSum(ok: ByteArray, wrong: ByteArray) =
+        fun setCheckSum(ok: ByteArray, wrong: ByteArray) =
                 apply { this.mCheckSumConfig = CheckSumConfig(ok, wrong) }
+
+        fun setEncryption(password: String, padding: EncryptionPadding, prefix: String) =
+                apply {
+                    if (password.isNotEmpty())
+                        this.mEncryptionConfig = EncryptionConfig(password, padding.padding, prefix)
+                }
 
         fun setHead(head: Byte) = apply { this.mHead = head }
 
         fun setTail(tail: Byte) = apply { this.mTail = tail }
 
         fun setFirstContact(mFirstContact: String) = apply { this.mFirstContact = mFirstContact }
-
-        fun setPreSharedKey(mPreSharedKey: String) = apply { this.mPreSharedKey = mPreSharedKey }
-
-        fun setEncryptionPrefix(mEncryptionPrefix: String) = apply { this.mEncryptionPrefix = mEncryptionPrefix }
-
-        fun usePKCS7(usePKCS7: Boolean) = apply { this.mUsePKCS7 = usePKCS7 }
 
         fun useCompression(useCompression: Boolean) = apply { this.mUseCompression = useCompression }
 
@@ -124,21 +114,21 @@ class SocketOption(
 
 
     fun encrypt(data: ByteArray): ByteArray =
-            mPreSharedKey?.let {
-                CompressEncrypt.encrypt(data, it, mUsePKCS7)
+            mEncryptionConfig?.run {
+                CompressEncrypt.encrypt(data, password, padding)
             } ?: data
 
     fun encryptFile(path: String): String =
-            mPreSharedKey?.let { CompressEncrypt.encryptFile(path, it) } ?: path
+            mEncryptionConfig?.run { CompressEncrypt.encryptFile(path, password, padding) } ?: path
 
     fun decrypt(data: ByteArray): ByteArray =
-            mPreSharedKey?.let {
-                CompressEncrypt.decrypt(data, it, mUsePKCS7)
+            mEncryptionConfig?.run {
+                CompressEncrypt.decrypt(data, password, padding)
             }
                     ?: data
 
     fun decryptFile(path: String): String =
-            mPreSharedKey?.let { CompressEncrypt.decryptFile(path, it) }
+            mEncryptionConfig?.run { CompressEncrypt.decryptFile(path, password, padding) }
                     ?: path
 
     fun compress(data: ByteArray): ByteArray =
@@ -177,8 +167,8 @@ class SocketOption(
             }
             HeadTail.NONE -> message.append(input.read().toChar())
         }
-        var result = message.removePrefix(mEncryptionPrefix).toString().toByteArray(Charsets.UTF_8)
-        if (mUseCompression || !mPreSharedKey.isNullOrEmpty())
+        var result = message.removePrefix(mEncryptionConfig?.prefix.toString()).toString().toByteArray(Charsets.UTF_8)
+        if (mUseCompression || mEncryptionConfig != null)
             result = result.fromBase64
         result = decrypt(result)
         result = decompress(result)
@@ -196,14 +186,35 @@ class SocketOption(
      * 5. Add CheckSum (Optional)
      * 6. Add Head-Tail (Optional)
      * */
-    fun pack(data: ByteArray, encrypt: Boolean = false, compress: Boolean = false): ByteArray {
+    fun pack(data: ByteArray, encrypt: Boolean?, compress: Boolean?): ByteArray {
         var result: ByteArray = data
+        val didCompress =
+                if (compress == null)
+                    if (mUseCompression) {
+                        result = compress(result)
+                        true
+                    } else false
+                else
+                    if (compress) {
+                        result = compress(result)
+                        true
+                    } else false
 
-        if (compress) result = compress(result)
-        if (encrypt) result = encrypt(result)
 
-        if (compress || encrypt) result = result.toBase64
-        if (encrypt) result = (mEncryptionPrefix.toByteArray(Charsets.UTF_8)) + result
+        val didEncrypt =
+                if (encrypt == null)
+                    if (mEncryptionConfig != null) {
+                        result = encrypt(result)
+                        true
+                    } else false
+                else
+                    if (mEncryptionConfig != null && encrypt) {
+                        result = encrypt(result)
+                        true
+                    } else false
+
+        if (didCompress || didEncrypt) result = result.toBase64
+        if (didEncrypt) result = (mEncryptionConfig?.prefix?.toByteArray(Charsets.UTF_8)) ?: ByteArray(0) + result
 
         result = mCheckSumConfig?.addCheckSum(result) ?: result
         return addHeadTail(result)
@@ -228,5 +239,7 @@ class SocketOption(
 
 
     }
+
+    class EncryptionConfig(var password: String, var padding: String, var prefix: String)
 
 }

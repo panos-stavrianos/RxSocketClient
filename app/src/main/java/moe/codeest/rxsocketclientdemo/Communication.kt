@@ -4,6 +4,7 @@ import android.util.Log
 import androidx.work.*
 import gr.osnet.rxsocket.RxSocketClient
 import gr.osnet.rxsocket.SocketSubscriber
+import gr.osnet.rxsocket.meta.EncryptionPadding
 import gr.osnet.rxsocket.meta.SocketConfig
 import gr.osnet.rxsocket.meta.SocketOption
 import gr.osnet.rxsocket.meta.ThreadStrategy
@@ -36,12 +37,10 @@ class Communication : Worker() {
                         .build())
                 .option(SocketOption.Builder()
                         //.setHeartBeat(HEART_BEAT, 15, TimeUnit.SECONDS)
-                        .setPreSharedKey(key)//if you pass a key then everything you receive it will decrypted automatically
+                        .setEncryption(key, EncryptionPadding.PKCS5Padding, "ENC^")//if you pass a key then everything you receive it will decrypted automatically
                         .useCompression(true)
                         .setHead(HEAD)
                         .setTail(TAIL)
-                        .setEncryptionPrefix("ENC^")
-                        .usePKCS7(true)
                         .setFirstContact(first)
                         .build())
 
@@ -53,7 +52,7 @@ class Communication : Worker() {
                             override fun onConnected() {
                                 Log.e(TAG, "onConnected")
 
-                                mClient.send(applicationContext.getString(R.string.data), true, true)
+                                mClient.send("Hello!", true, true)
 
                                 //Send File
                                 // val path = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES).absolutePath + "/1.jpg"

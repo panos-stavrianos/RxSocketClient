@@ -33,9 +33,9 @@ val ByteArray.fromBase64: ByteArray get() = Base64.decodeBase64(this)
 object CompressEncrypt {
 
 
-    fun encrypt(plaintext: String, password: String, usePKCS7: Boolean = true): ByteArray = encrypt(plaintext.toByteArray(Charsets.UTF_8), password, usePKCS7)
+    fun encrypt(plaintext: String, password: String, padding: String): ByteArray = encrypt(plaintext.toByteArray(Charsets.UTF_8), password, padding)
 
-    fun encrypt(plaintext: ByteArray, password: String, usePKCS7: Boolean = true): ByteArray {
+    fun encrypt(plaintext: ByteArray, password: String, padding: String): ByteArray {
         if (password.isEmpty()) return ByteArray(0)
         val random = SecureRandom()
         val salt = ByteArray(16)
@@ -51,10 +51,7 @@ object CompressEncrypt {
 
         val iv = IvParameterSpec(ivBytes)
 
-        val c = if (usePKCS7)
-            Cipher.getInstance("AES/CBC/PKCS7Padding")
-        else
-            Cipher.getInstance("AES/CBC/PKCS5Padding")
+        val c = Cipher.getInstance("AES/CBC/$padding")
 
         c.init(Cipher.ENCRYPT_MODE, key, iv)
         val encValue = c.doFinal(plaintext)
@@ -66,7 +63,7 @@ object CompressEncrypt {
         return finalCipherText
     }
 
-    fun encryptFile(path: String, password: String, usePKCS7: Boolean = true): String {
+    fun encryptFile(path: String, password: String, padding: String): String {
         if (password.isEmpty()) return path
         val random = SecureRandom()
         val salt = ByteArray(16)
@@ -82,10 +79,8 @@ object CompressEncrypt {
 
         val iv = IvParameterSpec(ivBytes)
 
-        val c = if (usePKCS7)
-            Cipher.getInstance("AES/CBC/PKCS7Padding")
-        else
-            Cipher.getInstance("AES/CBC/PKCS5Padding")
+        val c = Cipher.getInstance("AES/CBC/$padding")
+
         c.init(Cipher.ENCRYPT_MODE, key, iv)
 
         val fileOutputStream = FileOutputStream("$path.enc")
@@ -103,7 +98,7 @@ object CompressEncrypt {
     }
 
 
-    fun decrypt(data: ByteArray, password: String, usePKCS7: Boolean = true): ByteArray {
+    fun decrypt(data: ByteArray, password: String, padding: String): ByteArray {
         if (password.isEmpty()) return ByteArray(0)
 
         try {
@@ -121,10 +116,8 @@ object CompressEncrypt {
             val keyBytes = f.generateSecret(spec).encoded
             val key = SecretKeySpec(keyBytes, "AES")
 
-            val c = if (usePKCS7)
-                Cipher.getInstance("AES/CBC/PKCS7Padding")
-            else
-                Cipher.getInstance("AES/CBC/PKCS5Padding")
+            val c = Cipher.getInstance("AES/CBC/$padding")
+
             val ivParams = IvParameterSpec(ivBytes)
             c.init(Cipher.DECRYPT_MODE, key, ivParams)
             return c.doFinal(cipherBytes)
@@ -150,7 +143,7 @@ object CompressEncrypt {
         return ByteArray(0)
     }
 
-    fun decryptFile(path: String, password: String, usePKCS7: Boolean = true): String {
+    fun decryptFile(path: String, password: String, padding: String): String {
         if (password.isEmpty()) return ""
         try {
             val fis = FileInputStream(path)
@@ -168,10 +161,8 @@ object CompressEncrypt {
             val keyBytes = f.generateSecret(spec).encoded
             val key = SecretKeySpec(keyBytes, "AES")
 
-            val c = if (usePKCS7)
-                Cipher.getInstance("AES/CBC/PKCS7Padding")
-            else
-                Cipher.getInstance("AES/CBC/PKCS5Padding")
+            val c = Cipher.getInstance("AES/CBC/$padding")
+
             val ivParams = IvParameterSpec(ivBytes)
             c.init(Cipher.DECRYPT_MODE, key, ivParams)
             val cis = CipherInputStream(fis, c)
