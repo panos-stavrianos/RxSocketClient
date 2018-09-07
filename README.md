@@ -1,14 +1,13 @@
 # RxSocket (Under Development)
 This project is a fork from [codeestX](https://github.com/codeestX/RxSocketClient/)
 
-# Added
-* compression
-* encryption
+# Futures Added
+* Compression
+* Encryption
 * CheckSum (with Ok - Wrong Responses)
-* First Contact Message
+* File send
 
 # Usage
-
 1. Add the JitPack repository to your build.gradle file
 ```gradle
 allprojects {
@@ -21,10 +20,11 @@ allprojects {
 2. Add the dependency
 ```gradle
 dependencies {
-        implementation 'com.github.codeestX:RxSocketClient:v1.0.1'
+        implementation 'com.github.panos-stavrianos:RxSocketClient:0.0.3'
 }
 ```
-### init
+
+### Init
 ```kotlin
 val mClient = RxSocketClient
         .create(SocketConfig.Builder()
@@ -50,10 +50,13 @@ val mClient = RxSocketClient
 | Port | required | port number |
 | Charset | UTF_8 | the charset when encode a String to byte[] |
 | ThreadStrategy | Async | sending data asynchronously or synchronously|
-| Timeout | 0 | the timeout of a connection, millisecond |
+| Timeout | 0 | the timeout of a connection with TimeUnit as second parameter (millisecond default) |
 | HeartBeat | Optional | value and interval of heartbeat, millisecond |
-| Head | Optional | appending bytes at head when sending data, not included heartbeat |
-| Tail | Optional | appending bytes at last when sending data, not included heartbeat |
+| CheckSum | Optional | ok and wrong responses as ByteArray |
+| Encryption | Optional | password, padding and prefix |
+| Compression | Optional | boolean, false default |
+| Head | Optional | appending bytes at head when sending data |
+| Tail | Optional | appending bytes at last when sending data |
 
 ### connect
 ```kotlin
