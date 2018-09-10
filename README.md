@@ -166,7 +166,7 @@ Now we can imagine the following scenario
 
                           // In this case we already have encrypted our file and jpeg images are already compressed
                           // so we pass false in both parameters
-                          mClient.sedFile(encryptedPath, encrypt = false, compress =  false)
+                          mClient.sendFile(encryptedPath, encrypt = false, compress =  false)
                       }
 
                       "I am done with you..." -> mClient.disconnect() // or disposables.clear()
