@@ -1,3 +1,6 @@
+[![Release](https://jitpack.io/v/panos-stavrianos/RxSocketClient.svg)](https://jitpack.io/#panos-stavrianos/RxSocketClient)
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+[![paypal](http://orbitsystems.gr/images/Donation-Buy%20me%20beer-blue.svg)](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=J73XPNMNBGX6C)
 # RxSocket
 This project is a fork from [codeestX](https://github.com/codeestX/RxSocketClient/)
  
@@ -23,7 +26,7 @@ allprojects {
 2. Add the dependency
 ```gradle
 dependencies {
-        implementation 'com.github.panos-stavrianos:RxSocketClient:0.0.3'
+        implementation 'com.github.panos-stavrianos:RxSocketClient:0.0.4'
 }
 ```
 
