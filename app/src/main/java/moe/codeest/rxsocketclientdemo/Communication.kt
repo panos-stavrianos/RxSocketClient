@@ -40,7 +40,7 @@ class Communication : Worker() {
                 .option(SocketOption.Builder()
                         .setHeartBeat(HEART_BEAT, 15, TimeUnit.SECONDS)
                         .setCheckSum("ACK".toByteArray(), "NAK".toByteArray())
-                        .setEncryption(key, EncryptionPadding.PKCS5Padding, "ENC:")
+                        .setEncryption(key, EncryptionPadding.PKCS7Padding, "ENC^")
                         .setFirstContact(first)//FirstContact is always not compressed or encrypted
                         .useCompression(true)
                         .setHead(HEAD)
@@ -54,8 +54,7 @@ class Communication : Worker() {
                         object : SocketSubscriber() {
                             override fun onConnected() {
                                 Log.e(TAG, "onConnected")
-
-                                mClient.send("Hello!", encrypt = true, compress = true)
+                                mClient.send("Hello")
                                 //Send File
                                 // val path = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES).absolutePath + "/1.jpg"
                                 // mClient.sendFile(path, false)
@@ -105,8 +104,8 @@ class Communication : Worker() {
 
         private val TAG = Communication::class.java.simpleName
         private val HEART_BEAT = "beep".toByteArray(Charsets.UTF_8)
-        private const val first = "Hello Stranger"
-        private const val host = "192.168.1.172"
+        private const val first = "Hello stranger"
+        private const val host = "192.168.1.12"
         private const val port = 30010
         private const val key = "1234"
         private const val HEAD: Byte = 2

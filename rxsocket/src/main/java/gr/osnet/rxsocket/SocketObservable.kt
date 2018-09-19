@@ -50,7 +50,7 @@ class SocketObservable(private val mConfig: SocketConfig, val mSocket: Socket, v
                 try {
                     mSocket.connect(InetSocketAddress(mConfig.mIp, mConfig.mPort
                             ?: 1080), mConfig.mTimeout ?: 0)
-                    mClient.send(mOption?.mFirstContact, false)
+                    mClient.send(mOption?.mFirstContact, false, false)
 
                     observer?.onNext(DataWrapper(SocketState.OPEN, ByteArray(0)))
                     mReadThread.start()

@@ -214,9 +214,12 @@ class SocketOption(
                     } else false
 
         if (didCompress || didEncrypt) result = result.toBase64
-        if (didEncrypt) result = (mEncryptionConfig?.prefix?.toByteArray(Charsets.UTF_8)) ?: ByteArray(0) + result
+
+        if (didEncrypt) result = ((mEncryptionConfig?.prefix?.toByteArray(Charsets.UTF_8))
+                ?: ByteArray(0)) + result
 
         result = mCheckSumConfig?.addCheckSum(result) ?: result
+
         return addHeadTail(result)
     }
 

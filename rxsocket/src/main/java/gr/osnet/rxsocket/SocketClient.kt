@@ -104,12 +104,12 @@ class SocketClient(private val mConfig: SocketConfig) {
     }
 
 
-    fun send(message: String?, encrypt: Boolean = false, compress: Boolean = false) {
+    fun send(message: String?, encrypt: Boolean? = null, compress: Boolean? = null) {
         logger.info { "To server: $message" }
         send(message?.toByteArray(charset = mConfig.mCharset), encrypt, compress)
     }
 
-    fun send(data: ByteArray?, encrypt: Boolean = false, compress: Boolean = false) {
+    fun send(data: ByteArray?, encrypt: Boolean? = null, compress: Boolean? = null) {
         if (data == null) return
         val result = mOption?.pack(data, encrypt, compress) ?: data
 
@@ -117,15 +117,13 @@ class SocketClient(private val mConfig: SocketConfig) {
         lastExchange = System.currentTimeMillis()
     }
 
-    fun sendFile(path: String?, encrypt: Boolean = false, compress: Boolean = false) {
+    fun sendFile(path: String?, encrypt: Boolean? = null, compress: Boolean? = null) {
         path?.let {
             val dest: String =
-                    when {
-                        encrypt && compress -> mOption?.encryptFile(path) ?: it
-                        compress -> mOption?.compressFile(path) ?: it
-                        encrypt -> mOption?.encryptFile(path) ?: it
-                        else -> path
-                    }
+                    if (encrypt == true && compress == true) mOption?.encryptFile(path) ?: it
+                    else if (compress == true) mOption?.compressFile(path) ?: it
+                    else if (encrypt == true) mOption?.encryptFile(path) ?: it
+                    else path
 
             val file = File(dest)
             val size = file.length()
