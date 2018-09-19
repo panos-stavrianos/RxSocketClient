@@ -26,7 +26,7 @@ allprojects {
 2. Add the dependency
 ```gradle
 dependencies {
-        implementation 'com.github.panos-stavrianos:RxSocketClient:0.0.4'
+        implementation 'com.github.panos-stavrianos:RxSocketClient:0.0.5'
 }
 ```
 
